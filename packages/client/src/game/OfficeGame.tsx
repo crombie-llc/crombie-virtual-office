@@ -33,6 +33,7 @@ export default function OfficeGame({ state, connected }: Props) {
     return () => {
       gameRef.current?.destroy(true)
       gameRef.current = null
+      sceneRef.current = null
     }
   }, [])
 

@@ -21,6 +21,8 @@ export class OfficeScene extends Phaser.Scene {
   private avatars = new Map<string, Avatar>()
   private bots = new Map<string, AgentBot>()
   private botAgentName = new Map<string, string>()
+  // devIndex is intentionally never pruned — indices must be stable across the session
+  // so desks don't jump positions when a developer goes offline.
   private devIndex = new Map<string, number>()
   private pendingState?: OfficeState
 
@@ -36,6 +38,7 @@ export class OfficeScene extends Phaser.Scene {
   }
 
   create() {
+    this.events.on(Phaser.Scenes.Events.SHUTDOWN, this.shutdown, this)
     this.drawFloor()
     if (this.pendingState) {
       this.applyFullState(this.pendingState)

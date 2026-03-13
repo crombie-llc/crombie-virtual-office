@@ -24,6 +24,7 @@ export class Avatar {
   private celebContainer!: Phaser.GameObjects.Container
 
   private thinkTween?: Phaser.Tweens.Tween
+  private celebOriginY!: number
 
   constructor(scene: Phaser.Scene, gridX: number, gridY: number, state: DeveloperState) {
     this.scene = scene
@@ -47,7 +48,6 @@ export class Avatar {
 
     // Character — colored rectangle
     this.characterSprite = scene.add.rectangle(cx, cy - 24, 20, 28, this.color)
-    this.characterSprite.setAlpha(state.online ? 1 : 0.3)
 
     // Name label
     this.nameText = scene.add.text(cx, cy - 44, state.name, {
@@ -70,6 +70,7 @@ export class Avatar {
     const emoji3 = scene.add.text(16, 8, '🎊', { fontSize: '14px' }).setOrigin(0.5)
     this.celebContainer = scene.add.container(cx, cy - 50, [emoji1, emoji2, emoji3])
     this.celebContainer.setVisible(false)
+    this.celebOriginY = cy - 50
 
     this.applyState(state)
   }
@@ -99,12 +100,13 @@ export class Avatar {
 
     // Celebration
     if (state.celebrating) {
+      this.scene.tweens.killTweensOf(this.celebContainer)
       this.celebContainer.setVisible(true)
-      // Reset y and alpha before animating (in case of rapid re-trigger)
       this.celebContainer.setAlpha(1)
+      this.celebContainer.y = this.celebOriginY
       this.scene.tweens.add({
         targets: this.celebContainer,
-        y: this.celebContainer.y - 50,
+        y: this.celebOriginY - 50,
         alpha: { from: 1, to: 0 },
         duration: 3000,
         onComplete: () => { this.celebContainer.setVisible(false) }
