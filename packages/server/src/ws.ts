@@ -11,7 +11,7 @@ export class BroadcastServer {
 
   onConnect(cb: (ws: WebSocket) => void) {
     this.wss.on('connection', (ws) => {
-      ws.on('error', () => {})
+      ws.on('error', (err) => console.error('[ws] client error:', err.message))
       cb(ws)
     })
   }
