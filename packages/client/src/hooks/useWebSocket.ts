@@ -10,7 +10,7 @@ export function useWebSocket(url: string) {
 
     ws.onopen = () => setConnected(true)
     ws.onclose = () => setConnected(false)
-    ws.onerror = () => {}
+    ws.onerror = (e) => console.error('[useWebSocket] error:', e)
 
     ws.onmessage = (e) => {
       try {
@@ -21,6 +21,7 @@ export function useWebSocket(url: string) {
           setState(prev => {
             const next = { ...prev }
             for (const { dev, patch } of msg) {
+              // Only apply patches for devs already in state (server only patches known devs)
               if (next[dev]) next[dev] = { ...next[dev], ...patch }
             }
             return next

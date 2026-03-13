@@ -1,4 +1,4 @@
-import { Suspense, lazy, Component, type ReactNode, type ErrorInfo } from 'react'
+import { Suspense, lazy, useMemo, Component, type ReactNode, type ErrorInfo } from 'react'
 import { useWebSocket } from './hooks/useWebSocket'
 import { PresenceBoard } from './fallback/PresenceBoard'
 import type { OfficeState } from './types'
@@ -37,7 +37,10 @@ class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
 
 export default function App() {
   const { state, connected } = useWebSocket(WS_URL)
-  const fallback = <PresenceBoard state={state} connected={connected} />
+  const fallback = useMemo(
+    () => <PresenceBoard state={state} connected={connected} />,
+    [state, connected]
+  )
 
   return (
     <ErrorBoundary fallback={fallback}>
