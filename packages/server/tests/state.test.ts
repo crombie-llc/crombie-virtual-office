@@ -95,7 +95,14 @@ describe('StateManager', () => {
 
   it('getPatches returns what changed', () => {
     sm.applyEvent({ dev: 'ana', color: '#ff0000', type: 'session_start', ts: 1000 })
+    sm.applyEvent({ dev: 'ana', type: 'thinking', ts: 1500 })
     const patches = sm.applyEvent({ dev: 'ana', type: 'agent_start', agent: 'crombie:reviewer', ts: 2000 })
     expect(patches).toEqual([{ dev: 'ana', patch: { activeAgent: 'crombie:reviewer', thinking: false, lastSeen: 2000 } }])
+  })
+
+  it('updates color on reconnect if color changed', () => {
+    sm.applyEvent({ dev: 'ana', color: '#ff0000', type: 'session_start', ts: 1000 })
+    sm.applyEvent({ dev: 'ana', color: '#00ff00', type: 'session_start', ts: 2000 })
+    expect(sm.getAll()['ana'].color).toBe('#00ff00')
   })
 })

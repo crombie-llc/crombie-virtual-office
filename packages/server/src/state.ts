@@ -46,8 +46,10 @@ export class StateManager {
           activeAgent: null, thinking: false, celebrating: false, lastSeen: ts
         })
       } else {
-        this.state.get(dev)!.online = true
-        this.state.get(dev)!.lastSeen = ts
+        const existing = this.state.get(dev)!
+        existing.online = true
+        existing.lastSeen = ts
+        existing.color = color  // update color on reconnect in case it changed
       }
       this.resetHeartbeat(dev)
       const patch: OfficePatch = { dev, patch: { online: true, lastSeen: ts } }
@@ -70,8 +72,8 @@ export class StateManager {
 
     const changed: Partial<DeveloperState> = { lastSeen: ts }
 
-    // Always report thinking state when it's not a thinking event (either cleared now, or confirming it's false)
-    if (type !== 'thinking') changed.thinking = false
+    // Only report thinking: false when we are actively clearing it
+    if (wasThinking && type !== 'thinking') changed.thinking = false
 
     switch (type) {
       case 'session_end':
