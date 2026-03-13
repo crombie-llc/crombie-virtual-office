@@ -1,0 +1,7 @@
+{
+  "name": "@crombie-office/hook",
+  "version": "0.1.0",
+  "bin": {
+    "crombie-office": "./register.js"
+  }
+}
