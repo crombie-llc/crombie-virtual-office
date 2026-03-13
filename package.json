@@ -1,10 +1,17 @@
 {
   "name": "crombie-virtual-office",
   "private": true,
-  "workspaces": ["packages/*"],
+  "workspaces": [
+    "packages/*"
+  ],
   "scripts": {
     "server": "npm run dev --workspace=packages/server",
     "client": "npm run dev --workspace=packages/client",
-    "test": "npm run test --workspaces --if-present"
+    "dev": "concurrently \"npm run server\" \"npm run client\"",
+    "test": "npm run test --workspaces --if-present",
+    "register": "node packages/hook/register.js"
+  },
+  "devDependencies": {
+    "concurrently": "^9.2.1"
   }
 }
