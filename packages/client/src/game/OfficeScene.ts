@@ -3,71 +3,110 @@ import { Avatar } from './Avatar'
 import { AgentBot } from './AgentBot'
 import type { OfficeState, DeveloperState } from '../types'
 
-// Grid layout: place desks in a diagonal open-space pattern
-function getGridPosition(index: number): { gridX: number; gridY: number } {
-  const col = index % 4
-  const row = Math.floor(index / 4)
-  return { gridX: col * 2, gridY: row * 2 }
-}
+const ROOM_W = 8
+const ROOM_H = 6
+const WALL_H = 48
 
-function isoToScreen(gridX: number, gridY: number, cx: number, cy: number) {
-  return {
-    x: cx + (gridX - gridY) * 64,
-    y: cy + (gridX + gridY) * 32,
-  }
+function getGridPosition(index: number) {
+  const col = index % 3
+  const row = Math.floor(index / 3)
+  return { gridX: col * 2 + 1, gridY: row * 2 + 1 }
 }
 
 export class OfficeScene extends Phaser.Scene {
   private avatars = new Map<string, Avatar>()
   private bots = new Map<string, AgentBot>()
-  private botAgentName = new Map<string, string>()
   // devIndex is intentionally never pruned — indices must be stable across the session
   // so desks don't jump positions when a developer goes offline.
   private devIndex = new Map<string, number>()
+  private botAgentName = new Map<string, string>()
   private pendingState?: OfficeState
+  private ox = 0
+  private oy = 0
 
-  constructor() {
-    super({ key: 'OfficeScene' })
-  }
+  constructor() { super({ key: 'OfficeScene' }) }
 
   preload() {
-    // Uncomment these lines once Kenney assets are placed in assets/:
-    // this.load.image('desk', '/src/game/assets/tile_desk.png')
-    // this.load.image('floor', '/src/game/assets/tile_floor.png')
-    // Until then, Avatar.ts renders colored rectangles as placeholders automatically.
+    // Kenney assets disabled for MVP — Avatar uses colored shapes as fallback
   }
 
   create() {
     this.events.on(Phaser.Scenes.Events.SHUTDOWN, this.shutdown, this)
-    this.drawFloor()
+    // Center room: we want the floor center tile to be near screen center
+    this.ox = this.scale.width / 2 - (ROOM_W / 2 - ROOM_H / 2) * 64
+    this.oy = this.scale.height / 2 - (ROOM_W / 2 + ROOM_H / 2) * 32 - 10
+    this.drawRoom()
     if (this.pendingState) {
       this.applyFullState(this.pendingState)
       this.pendingState = undefined
     }
   }
 
-  private drawFloor() {
-    const cx = this.scale.width / 2
-    const cy = this.scale.height / 2 - 60
+  private drawRoom() {
+    const ox = this.ox
+    const oy = this.oy
     const g = this.add.graphics()
 
-    for (let gx = -4; gx <= 8; gx++) {
-      for (let gy = -4; gy <= 8; gy++) {
-        const { x, y } = isoToScreen(gx, gy, cx, cy)
-        const col = (gx + gy) % 2 === 0 ? 0x1e3a28 : 0x172e20
+    // ── Back wall (gy=0, visible upper-right) ──
+    for (let gx = 0; gx < ROOM_W; gx++) {
+      const x = ox + gx * 64
+      const y = oy + gx * 32
+      g.fillStyle(gx % 2 === 0 ? 0x4e4e66 : 0x585870, 1)
+      g.fillPoints([
+        { x,        y: y - 16 },
+        { x: x + 64, y },
+        { x: x + 64, y: y - WALL_H },
+        { x,        y: y - 16 - WALL_H },
+      ], true)
+      g.lineStyle(1, 0x707088, 0.8)
+      g.beginPath(); g.moveTo(x, y - 16 - WALL_H); g.lineTo(x + 64, y - WALL_H); g.strokePath()
+    }
+
+    // ── Left wall (gx=0, visible upper-left) ──
+    for (let gy = 0; gy < ROOM_H; gy++) {
+      const x = ox - gy * 64
+      const y = oy + gy * 32
+      g.fillStyle(gy % 2 === 0 ? 0x424258 : 0x4a4a62, 1)
+      g.fillPoints([
+        { x: x - 64, y },
+        { x,         y: y + 16 },
+        { x,         y: y + 16 - WALL_H },
+        { x: x - 64, y: y - WALL_H },
+      ], true)
+      g.lineStyle(1, 0x62627a, 0.8)
+      g.beginPath(); g.moveTo(x - 64, y - WALL_H); g.lineTo(x, y + 16 - WALL_H); g.strokePath()
+    }
+
+    // ── Back corner line ──
+    g.lineStyle(2, 0x8888a0, 1)
+    g.beginPath(); g.moveTo(ox, oy - 16); g.lineTo(ox, oy - 16 - WALL_H); g.strokePath()
+
+    // ── Floor tiles (beige/cream) ──
+    for (let gx = 0; gx < ROOM_W; gx++) {
+      for (let gy = 0; gy < ROOM_H; gy++) {
+        const x = ox + (gx - gy) * 64
+        const y = oy + (gx + gy) * 32
+        const col = (gx + gy) % 2 === 0 ? 0xe8dcc8 : 0xddd0ba
         g.fillStyle(col, 1)
-        g.fillPoints([
-          { x, y: y - 16 },
-          { x: x + 64, y },
-          { x, y: y + 16 },
-          { x: x - 64, y },
-        ], true)
+        g.lineStyle(1, 0xbcaa90, 0.5)
+        const pts = [{ x, y: y - 16 }, { x: x + 64, y }, { x, y: y + 16 }, { x: x - 64, y }]
+        g.fillPoints(pts, true)
+        g.strokePoints(pts, true)
       }
     }
+
+    // ── Room title ──
+    const titleX = ox + (ROOM_W / 2 - ROOM_H / 2) * 64
+    const titleY = oy - 16 - WALL_H - 28
+    this.add.text(titleX, titleY, '🏢  CROMBIE HQ', {
+      fontSize: '13px',
+      color: '#7ee8a2',
+      fontFamily: 'monospace',
+    }).setOrigin(0.5, 0.5)
   }
 
   updateState(state: OfficeState) {
-    if (!this.scene.isActive('OfficeScene')) {
+    if (!this.scene || !this.scene.isActive('OfficeScene')) {
       this.pendingState = state
       return
     }
@@ -75,24 +114,23 @@ export class OfficeScene extends Phaser.Scene {
   }
 
   private applyFullState(state: OfficeState) {
-    const cx = this.scale.width / 2
-    const cy = this.scale.height / 2 - 60
-
+    const ox = this.ox
+    const oy = this.oy
     for (const [devName, devState] of Object.entries(state)) {
       if (!this.devIndex.has(devName)) {
         this.devIndex.set(devName, this.devIndex.size)
       }
       const idx = this.devIndex.get(devName)!
       const { gridX, gridY } = getGridPosition(idx)
-      const { x, y } = isoToScreen(gridX, gridY, cx, cy)
+      const screenX = ox + (gridX - gridY) * 64
+      const screenY = oy + (gridX + gridY) * 32
 
       if (!this.avatars.has(devName)) {
-        this.avatars.set(devName, new Avatar(this, gridX, gridY, devState))
+        this.avatars.set(devName, new Avatar(this, screenX, screenY, devState))
       } else {
         this.avatars.get(devName)!.applyState(devState)
       }
-
-      this.updateBot(devName, devState, x, y)
+      this.updateBot(devName, devState, screenX, screenY)
     }
   }
 
@@ -100,9 +138,8 @@ export class OfficeScene extends Phaser.Scene {
     if (state.activeAgent) {
       const currentName = this.botAgentName.get(devName)
       if (!this.bots.has(devName) || currentName !== state.activeAgent) {
-        // Destroy existing bot if agent name changed
         this.bots.get(devName)?.destroy()
-        this.bots.set(devName, new AgentBot(this, x + 36, y - 20, state.activeAgent))
+        this.bots.set(devName, new AgentBot(this, x + 44, y - 28, state.activeAgent))
         this.botAgentName.set(devName, state.activeAgent)
       }
     } else {
@@ -112,7 +149,6 @@ export class OfficeScene extends Phaser.Scene {
     }
   }
 
-  // Called by Phaser when the game is destroyed — clean up all game objects
   shutdown() {
     this.avatars.forEach(a => a.destroy())
     this.bots.forEach(b => b.destroy())
