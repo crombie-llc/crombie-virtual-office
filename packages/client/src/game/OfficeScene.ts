@@ -20,6 +20,7 @@ function isoToScreen(gridX: number, gridY: number, cx: number, cy: number) {
 export class OfficeScene extends Phaser.Scene {
   private avatars = new Map<string, Avatar>()
   private bots = new Map<string, AgentBot>()
+  private botAgentName = new Map<string, string>()
   private devIndex = new Map<string, number>()
   private pendingState?: OfficeState
 
@@ -94,12 +95,17 @@ export class OfficeScene extends Phaser.Scene {
 
   private updateBot(devName: string, state: DeveloperState, x: number, y: number) {
     if (state.activeAgent) {
-      if (!this.bots.has(devName)) {
+      const currentName = this.botAgentName.get(devName)
+      if (!this.bots.has(devName) || currentName !== state.activeAgent) {
+        // Destroy existing bot if agent name changed
+        this.bots.get(devName)?.destroy()
         this.bots.set(devName, new AgentBot(this, x + 36, y - 20, state.activeAgent))
+        this.botAgentName.set(devName, state.activeAgent)
       }
     } else {
       this.bots.get(devName)?.destroy()
       this.bots.delete(devName)
+      this.botAgentName.delete(devName)
     }
   }
 
@@ -109,5 +115,6 @@ export class OfficeScene extends Phaser.Scene {
     this.bots.forEach(b => b.destroy())
     this.avatars.clear()
     this.bots.clear()
+    this.botAgentName.clear()
   }
 }

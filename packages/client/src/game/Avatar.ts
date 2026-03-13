@@ -65,8 +65,10 @@ export class Avatar {
     this.thinkBubble.setVisible(false)
 
     // Celebrate container (hidden by default)
-    const emoji = scene.add.text(0, 0, '🎉', { fontSize: '20px' }).setOrigin(0.5)
-    this.celebContainer = scene.add.container(cx, cy - 50, [emoji])
+    const emoji1 = scene.add.text(0, 0, '🎉', { fontSize: '20px' }).setOrigin(0.5)
+    const emoji2 = scene.add.text(-16, 8, '✨', { fontSize: '14px' }).setOrigin(0.5)
+    const emoji3 = scene.add.text(16, 8, '🎊', { fontSize: '14px' }).setOrigin(0.5)
+    this.celebContainer = scene.add.container(cx, cy - 50, [emoji1, emoji2, emoji3])
     this.celebContainer.setVisible(false)
 
     this.applyState(state)
@@ -98,11 +100,13 @@ export class Avatar {
     // Celebration
     if (state.celebrating) {
       this.celebContainer.setVisible(true)
+      // Reset y and alpha before animating (in case of rapid re-trigger)
+      this.celebContainer.setAlpha(1)
       this.scene.tweens.add({
         targets: this.celebContainer,
-        y: this.celebContainer.y - 30,
+        y: this.celebContainer.y - 50,
         alpha: { from: 1, to: 0 },
-        duration: 1000,
+        duration: 3000,
         onComplete: () => { this.celebContainer.setVisible(false) }
       })
     }
