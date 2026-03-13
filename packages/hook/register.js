@@ -53,7 +53,7 @@ async function main () {
   let settings = {}
   try { settings = JSON.parse(fs.readFileSync(CLAUDE_SETTINGS_PATH, 'utf8')) } catch {}
 
-  const hookCmd = `node ${HOOK_PATH}`
+  const hookCmd = `node "${HOOK_PATH}"`
   const hookTypes = ['PreToolUse', 'PostToolUse', 'SessionStart', 'SessionStop']
 
   if (!settings.hooks) settings.hooks = {}
