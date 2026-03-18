@@ -438,5 +438,6 @@ export class OfficeScene extends Phaser.Scene {
     this.avatars.clear()
     this.bots.clear()
     this.botAgentName.clear()
+    this.devIndex.clear()
   }
 }
