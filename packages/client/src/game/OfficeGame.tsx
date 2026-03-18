@@ -1,163 +1,137 @@
-import { useEffect, useRef, useMemo, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import Phaser from 'phaser'
 import { OfficeScene } from './OfficeScene'
-import { GroundFloorScene } from './GroundFloorScene'
-import type { OfficeState } from '../types'
+import type { OfficeState, DeveloperState, WsMessage } from '../types'
 
-interface Props {
-  state: OfficeState
-  connected: boolean
+const WS_URL = (import.meta as { env?: { VITE_WS_URL?: string } }).env?.VITE_WS_URL ?? 'ws://localhost:4242'
+
+// ── HUD Dock Components ──
+
+function DevChip({ dev }: { dev: DeveloperState }) {
+  const statusEmoji = !dev.online ? '⚫'
+    : dev.thinking ? '🤔'
+    : dev.activeAgent ? '💻'
+    : '✅'
+  const agentShort = dev.activeAgent?.replace(/^crombie[:-]/, '') ?? null
+
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 5, opacity: dev.online ? 1 : 0.4 }}>
+      <div style={{
+        width: 8, height: 8, borderRadius: '50%', background: dev.color,
+        boxShadow: dev.online ? `0 0 5px ${dev.color}` : 'none',
+      }} />
+      <span>{dev.name}</span>
+      {agentShort && <span style={{ color: '#25B2E2', fontSize: '9px' }}>{agentShort}</span>}
+      <span style={{ fontSize: '10px' }}>{statusEmoji}</span>
+    </div>
+  )
 }
 
-export default function OfficeGame({ state, connected }: Props) {
+function HudDock({ state }: { state: OfficeState }) {
+  return (
+    <div style={{
+      position: 'absolute', bottom: 16, left: '50%',
+      transform: 'translateX(-50%)',
+      background: 'rgba(13,13,26,0.75)',
+      backdropFilter: 'blur(8px)',
+      WebkitBackdropFilter: 'blur(8px)',
+      border: '1px solid rgba(51,197,102,0.2)',
+      borderRadius: 24, padding: '8px 20px',
+      display: 'flex', gap: 16, alignItems: 'center',
+      fontFamily: 'monospace', fontSize: '11px', color: '#aaa',
+      pointerEvents: 'none',
+    }}>
+      {Object.values(state).map(d => <DevChip key={d.name} dev={d} />)}
+    </div>
+  )
+}
+
+// ── Main Component ──
+
+export default function OfficeGame() {
   const containerRef = useRef<HTMLDivElement>(null)
   const gameRef = useRef<Phaser.Game | null>(null)
   const sceneRef = useRef<OfficeScene | null>(null)
-  const [floor, setFloor] = useState<1 | 2>(2)
+  const [officeState, setOfficeState] = useState<OfficeState>({})
 
   useEffect(() => {
-    if (!containerRef.current) return
+    if (!containerRef.current || gameRef.current) return
 
-    const officeScene = new OfficeScene()
-    const groundScene = new GroundFloorScene()
-    sceneRef.current = officeScene
+    const scene = new OfficeScene()
+    sceneRef.current = scene
 
     gameRef.current = new Phaser.Game({
       type: Phaser.AUTO,
       width: window.innerWidth,
       height: window.innerHeight,
-      backgroundColor: '#0d0d1a',
+      backgroundColor: '#181816',
       parent: containerRef.current,
-      scene: [officeScene, groundScene],
+      scene: [scene],
       pixelArt: true,
     })
 
+    // WebSocket connection — handles full_state and incremental patch arrays
+    let ws: WebSocket | null = null
+    let destroyed = false
+
+    function connect() {
+      if (destroyed) return
+      ws = new WebSocket(WS_URL)
+
+      ws.onopen = () => {
+        // connection established
+      }
+
+      ws.onmessage = (event) => {
+        try {
+          const msg: WsMessage = JSON.parse(event.data)
+          if ('type' in msg && msg.type === 'full_state') {
+            setOfficeState(msg.state)
+            sceneRef.current?.updateState(msg.state)
+          } else if (Array.isArray(msg)) {
+            setOfficeState(prev => {
+              const next = { ...prev }
+              for (const { dev, patch } of msg) {
+                if (next[dev]) next[dev] = { ...next[dev], ...patch }
+              }
+              sceneRef.current?.updateState(next)
+              return next
+            })
+          }
+        } catch (e) {
+          console.error('[OfficeGame] WS parse error', e)
+        }
+      }
+
+      ws.onerror = (e) => console.error('[OfficeGame] WS error:', e)
+
+      ws.onclose = () => {
+        if (!destroyed) setTimeout(connect, 3000)
+      }
+    }
+
+    connect()
+
     return () => {
+      destroyed = true
+      ws?.close()
       gameRef.current?.destroy(true)
       gameRef.current = null
       sceneRef.current = null
     }
   }, [])
 
-  useEffect(() => {
-    sceneRef.current?.updateState(state)
-  }, [state])
-
-  const toggleFloor = () => {
-    const game = gameRef.current
-    if (!game) return
-    if (floor === 2) {
-      game.scene.stop('OfficeScene')
-      game.scene.start('GroundFloorScene')
-      setFloor(1)
-    } else {
-      game.scene.stop('GroundFloorScene')
-      game.scene.start('OfficeScene')
-      setFloor(2)
-      // Re-apply state when switching back to office floor
-      setTimeout(() => sceneRef.current?.updateState(state), 100)
-    }
-  }
-
-  // ── Stats computation ──
-  const stats = useMemo(() => {
-    const devs = Object.values(state)
-    const online = devs.filter(d => d.online).length
-    const working = devs.filter(d => d.online && d.activeAgent).length
-    const thinking = devs.filter(d => d.online && d.thinking).length
-    const idle = online - working - thinking
-    return { total: devs.length, online, working, thinking, idle: Math.max(0, idle) }
-  }, [state])
-
   return (
-    <div style={{ position: 'relative', width: '100vw', height: '100vh' }}>
+    <div style={{ width: '100vw', height: '100vh', overflow: 'hidden', background: '#181816', position: 'relative' }}>
       <div ref={containerRef} style={{ width: '100%', height: '100%' }} />
-
-      {/* ── Top-left: connection status ── */}
       <div style={{
-        position: 'absolute', top: 12, left: 16,
-        fontFamily: 'monospace', fontSize: '11px', color: '#666',
-        pointerEvents: 'none',
-      }}>
-        {connected ? '🟢 live' : '🔴 connecting...'}
-      </div>
-
-      {/* ── Top-center: floor toggle ── */}
-      <button onClick={toggleFloor} style={{
         position: 'absolute', top: 16, left: '50%', transform: 'translateX(-50%)',
-        background: 'rgba(13,13,26,0.85)', border: '1px solid #33c566',
-        color: '#33c566', fontFamily: 'monospace', fontSize: '11px',
-        padding: '6px 16px', cursor: 'pointer', borderRadius: 4,
+        fontFamily: 'monospace', textAlign: 'center', pointerEvents: 'none',
       }}>
-        {floor === 2 ? '☕ Ir a Planta Baja' : '💻 Ir al Piso 2'}
-      </button>
-
-      {/* ── Top-right: title ── */}
-      <div style={{
-        position: 'absolute', top: 14, right: 20,
-        fontFamily: 'monospace', pointerEvents: 'none',
-        display: 'flex', alignItems: 'center', gap: 10,
-      }}>
-        <span style={{ fontSize: '20px', color: '#33c566', fontWeight: 'bold', letterSpacing: '3px' }}>
-          CROMBIE HQ
-        </span>
-        <span style={{ fontSize: '11px', color: '#25B2E2' }}>virtual office</span>
+        <div style={{ fontSize: '14px', fontWeight: 'bold', color: '#33c566', letterSpacing: 3 }}>CROMBIE HQ</div>
+        <div style={{ fontSize: '9px', color: '#25B2E2', letterSpacing: 2 }}>virtual office</div>
       </div>
-
-      {/* ── Bottom stats bar ── */}
-      <div style={{
-        position: 'absolute', bottom: 0, left: 0, right: 0,
-        background: 'linear-gradient(transparent, rgba(10,10,26,0.95))',
-        padding: '16px 24px 12px',
-        display: 'flex', alignItems: 'center', gap: 24,
-        fontFamily: 'monospace', fontSize: '12px', color: '#aaa',
-        pointerEvents: 'none',
-      }}>
-        <Stat label="working" value={stats.working} color="#4ac8ff" />
-        <Stat label="thinking" value={stats.thinking} color="#f0c040" />
-        <Stat label="idle" value={stats.idle} color="#3fb950" />
-        <Stat label="offline" value={stats.total - stats.online} color="#555" />
-        <div style={{ flex: 1 }} />
-        <DevList state={state} />
-      </div>
-    </div>
-  )
-}
-
-function Stat({ label, value, color }: { label: string; value: number; color: string }) {
-  return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-      <span style={{ color, fontWeight: 'bold', fontSize: '16px' }}>{value}</span>
-      <span>{label}</span>
-    </div>
-  )
-}
-
-function DevList({ state }: { state: OfficeState }) {
-  const devs = Object.values(state)
-  if (devs.length === 0) return null
-
-  return (
-    <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
-      {devs.map(d => (
-        <div key={d.name} style={{
-          display: 'flex', alignItems: 'center', gap: 5, opacity: d.online ? 1 : 0.4,
-        }}>
-          <div style={{
-            width: 10, height: 10, borderRadius: '50%',
-            background: d.color,
-            boxShadow: d.online ? `0 0 6px ${d.color}` : 'none',
-          }} />
-          <span style={{ fontSize: '11px' }}>{d.name}</span>
-          {d.activeAgent && (
-            <span style={{ fontSize: '9px', color: '#4ac8ff' }}>
-              🤖 {d.activeAgent.replace('crombie:', '').replace('crombie-', '')}
-            </span>
-          )}
-          {d.thinking && <span style={{ fontSize: '9px', color: '#f0c040' }}>💭</span>}
-          {d.celebrating && <span style={{ fontSize: '9px' }}>🎉</span>}
-        </div>
-      ))}
+      {Object.keys(officeState).length > 0 && <HudDock state={officeState} />}
     </div>
   )
 }

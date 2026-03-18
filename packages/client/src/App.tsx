@@ -1,7 +1,6 @@
 import { Suspense, lazy, useMemo, Component, type ReactNode, type ErrorInfo } from 'react'
 import { useWebSocket } from './hooks/useWebSocket'
 import { PresenceBoard } from './fallback/PresenceBoard'
-import type { OfficeState } from './types'
 
 const WS_URL = (import.meta as { env?: { VITE_WS_URL?: string } }).env?.VITE_WS_URL ?? 'ws://localhost:4242'
 
@@ -45,7 +44,7 @@ export default function App() {
   return (
     <ErrorBoundary fallback={fallback}>
       <Suspense fallback={fallback}>
-        <OfficeGame state={state} connected={connected} />
+        <OfficeGame />
       </Suspense>
     </ErrorBoundary>
   )
