@@ -5,19 +5,16 @@ import { toScreen } from './IsoCube'
 const FLOOR_H = 0.12
 
 function drawRobot(g: Phaser.GameObjects.Graphics, config: MascotConfig) {
-  const ac = config.accentColor
-  const c = config.color
-
   // Body (main cube face — front)
-  g.fillStyle(c, 1)
+  g.fillStyle(config.color, 1)
   g.fillRect(-10, -10, 20, 18)
 
   // Body shading (right face)
-  g.fillStyle(ac, 1)
+  g.fillStyle(config.accentColor, 1)
   g.fillRect(10, -7, 5, 15)
 
   // Body shading (top face)
-  g.fillStyle(ac, 1)
+  g.fillStyle(config.accentColor, 1)
   g.fillRect(-7, -14, 20, 5)
 
   // Eyes
@@ -30,7 +27,7 @@ function drawRobot(g: Phaser.GameObjects.Graphics, config: MascotConfig) {
   g.fillRect(-4, 2, 9, 2)
 
   // Antenna base
-  g.fillStyle(c, 1)
+  g.fillStyle(config.color, 1)
   g.fillRect(-2, -14, 4, 4)
 
   // Antenna tip
@@ -40,7 +37,7 @@ function drawRobot(g: Phaser.GameObjects.Graphics, config: MascotConfig) {
 
 function getMascotConfig(agentName: string): MascotConfig {
   const name = agentName.toLowerCase()
-  if (name.includes('explorer') || name.includes('explore')) {
+  if (name.includes('explore')) {
     return { color: 0x00bcd4, accentColor: 0x4dd0e1, label: '🤖 explore', bounceHeight: 10 }
   }
   if (name.includes('architect')) {
@@ -61,7 +58,7 @@ function getMascotConfig(agentName: string): MascotConfig {
 
 export class AgentBot {
   private container: Phaser.GameObjects.Container
-  private bounceTween: Phaser.Tweens.Tween
+  private bounceTween: Phaser.Tweens.Tween | null = null
 
   constructor(
     scene: Phaser.Scene,
@@ -94,7 +91,7 @@ export class AgentBot {
     }).setOrigin(0.5, 0)
 
     this.container = scene.add.container(x, y, [glow, g, label])
-    this.container.setDepth(y + 100)
+    this.container.setDepth(y + 100) // render above avatar at same tile
 
     // Bounce animation
     this.bounceTween = scene.tweens.add({
@@ -108,7 +105,7 @@ export class AgentBot {
   }
 
   destroy() {
-    this.bounceTween.stop()
+    this.bounceTween?.stop()
     this.container.destroy()
   }
 }
