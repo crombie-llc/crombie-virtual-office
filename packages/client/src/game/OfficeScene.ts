@@ -345,16 +345,16 @@ export class OfficeScene extends Phaser.Scene {
       } else {
         this.avatars.get(devName)!.applyState(devState)
       }
-      this.updateBot(devName, devState, screenX, screenY)
+      this.updateBot(devName, devState, desk.tx, desk.ty, ox, oy)
     }
   }
 
-  private updateBot(devName: string, state: DeveloperState, x: number, y: number) {
+  private updateBot(devName: string, state: DeveloperState, tx: number, ty: number, ox: number, oy: number) {
     if (state.activeAgent) {
       const currentName = this.botAgentName.get(devName)
       if (!this.bots.has(devName) || currentName !== state.activeAgent) {
         this.bots.get(devName)?.destroy()
-        this.bots.set(devName, new AgentBot(this, x + 50, y - 30, state.activeAgent))
+        this.bots.set(devName, new AgentBot(this, tx, ty, ox, oy, state.activeAgent))
         this.botAgentName.set(devName, state.activeAgent)
       }
     } else {
