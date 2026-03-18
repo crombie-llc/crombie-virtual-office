@@ -92,6 +92,7 @@ process.stdin.on('end', () => {
     const hookInput = JSON.parse(raw)
     const config = readConfig()
     if (!config) process.exit(0)
+    if (config.enabled === false) process.exit(0)
     const event = buildEvent(hookInput, config)
     if (!event) process.exit(0)
     sendEvent(config.serverUrl, event)
