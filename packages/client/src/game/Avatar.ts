@@ -1,82 +1,109 @@
 import Phaser from 'phaser'
 import type { DeveloperState } from '../types'
 
+/**
+ * Avatar workstation: Kenney desk + monitor + chair + character sprite.
+ * Characters are 256x512 with figure occupying ~bottom 55%.
+ * We use alternating Human_ and Male_ sprites for variety.
+ */
 export class Avatar {
   private scene: Phaser.Scene
   private container: Phaser.GameObjects.Container
   private thinkBubble!: Phaser.GameObjects.Container
   private celebContainer!: Phaser.GameObjects.Container
-  private celebOriginY = -52
+  private celebOriginY = -80
   private thinkTween?: Phaser.Tweens.Tween
+  private statusDot!: Phaser.GameObjects.Arc
+  private activityLabel!: Phaser.GameObjects.Text
 
-  constructor(scene: Phaser.Scene, screenX: number, screenY: number, state: DeveloperState) {
+  constructor(scene: Phaser.Scene, screenX: number, screenY: number, index: number, state: DeveloperState) {
     this.scene = scene
-    const colorNum = parseInt(state.color.replace('#', ''), 16)
+    const color = parseInt(state.color.replace('#', ''), 16)
+    const items: Phaser.GameObjects.GameObject[] = []
 
-    // ── Desk: isometric parallelogram ──
-    const deskG = scene.add.graphics()
-    deskG.fillStyle(0xa07840, 1)
-    deskG.fillPoints([{ x: 0, y: -10 }, { x: 36, y: 4 }, { x: 0, y: 18 }, { x: -36, y: 4 }], true)
-    deskG.fillStyle(0x7a5828, 1)
-    deskG.fillPoints([{ x: -36, y: 4 }, { x: 0, y: 18 }, { x: 0, y: 28 }, { x: -36, y: 14 }], true)
-    deskG.fillStyle(0x8c6530, 1)
-    deskG.fillPoints([{ x: 0, y: 18 }, { x: 36, y: 4 }, { x: 36, y: 14 }, { x: 0, y: 28 }], true)
+    // ── Desk ──
+    const desk = scene.add.image(0, 10, 'desk_SE').setScale(0.48).setOrigin(0.5, 1)
+    items.push(desk)
 
-    // ── Monitor ──
-    const monG = scene.add.graphics()
-    monG.fillStyle(0x222233, 1)
-    monG.fillRect(-2, -32, 4, 6)
-    monG.fillRect(-7, -28, 14, 3)
-    monG.fillStyle(0x1a1a2e, 1)
-    monG.fillRect(-10, -50, 20, 19)
-    monG.fillStyle(0x4a9eff, 0.85)
-    monG.fillRect(-8, -48, 16, 15)
+    // ── Monitor on desk ──
+    const monitor = scene.add.image(2, -12, 'computerScreen_SE').setScale(0.48).setOrigin(0.5, 1)
+    items.push(monitor)
 
-    // ── Chair ──
-    const chairG = scene.add.graphics()
-    chairG.fillStyle(0x5535a0, 1)
-    chairG.fillRect(-8, 12, 16, 16)
-    chairG.fillStyle(0x4428880, 1)
-    chairG.fillRect(-10, 10, 20, 4)
+    // ── Chair (behind the character) ──
+    const chair = scene.add.image(-2, 28, 'chairDesk_SE').setScale(0.36).setOrigin(0.5, 1)
+    items.push(chair)
 
-    // ── Character: body + head ──
-    const body = scene.add.rectangle(0, -22, 14, 20, colorNum)
-    const head = scene.add.arc(0, -39, 8, 0, 360, false, 0xf5c8a0)
-    head.setFillStyle(0xf5c8a0)
+    // ── Character sprite ──
+    // Alternate between Human (prototype) and Male (dungeon) for visual variety
+    const spriteSet = index % 2 === 0 ? 'human' : 'male'
+    const variant = index % 8
+    const charKey = `${spriteSet}_${variant}`
+    const character = scene.add.image(4, 10, charKey)
+      .setScale(0.425)       // 0.5 * 0.85 = 0.425
+      .setOrigin(0.5, 0.92)  // anchor near feet (figure is in bottom portion)
+    items.push(character)
 
     // ── Name label ──
-    const nameText = scene.add.text(0, -60, state.name, {
-      fontSize: '9px', color: state.color, fontFamily: 'monospace',
+    const nameText = scene.add.text(0, -42, state.name, {
+      fontSize: '10px', color: '#ffffff', fontFamily: 'monospace', fontStyle: 'bold',
     }).setOrigin(0.5, 0.5)
-    const nameBg = scene.add.rectangle(0, -60, nameText.width + 12, 16, 0x0a0a18, 0.88)
-    nameBg.setStrokeStyle(1, colorNum, 0.7)
+    const pill = scene.add.rectangle(0, -42, nameText.width + 16, 17, 0x1a1a2e, 0.9)
+    pill.setStrokeStyle(1.5, color, 0.85)
+    this.statusDot = scene.add.circle(nameText.width / 2 + 11, -42, 3,
+      state.online ? 0x3fb950 : 0x666666)
+    items.push(pill, nameText, this.statusDot)
+
+    // ── Activity label (floating above name pill) ──
+    const activityText = scene.add.text(0, -72, '', {
+      fontSize: '8px', color: '#25B2E2', fontFamily: 'monospace',
+      backgroundColor: '#0d0d1a', padding: { x: 5, y: 2 },
+    }).setOrigin(0.5, 0.5).setAlpha(0.85)
+    this.activityLabel = activityText
+    items.push(activityText)
 
     // ── Thinking bubble ──
-    const bubBg = scene.add.rectangle(0, 0, 46, 15, 0xffffff, 0.92).setOrigin(0.5)
-    const bubText = scene.add.text(0, 0, '• • •', { fontSize: '8px', color: '#222', fontFamily: 'monospace' }).setOrigin(0.5)
-    this.thinkBubble = scene.add.container(0, -80, [bubBg, bubText])
+    const bubBg = scene.add.rectangle(0, 0, 46, 16, 0xffffff, 0.95)
+      .setStrokeStyle(1, 0xcccccc)
+    const dots = scene.add.text(0, 0, '• • •', {
+      fontSize: '9px', color: '#555', fontFamily: 'monospace',
+    }).setOrigin(0.5)
+    const tail = scene.add.triangle(0, 10, -3, 0, 3, 0, 0, 5, 0xffffff)
+    this.thinkBubble = scene.add.container(0, -56, [bubBg, dots, tail])
     this.thinkBubble.setVisible(false)
+    items.push(this.thinkBubble)
 
     // ── Celebration ──
-    const ce1 = scene.add.text(0, 0, '🎉', { fontSize: '18px' }).setOrigin(0.5)
-    const ce2 = scene.add.text(-16, 8, '✨', { fontSize: '12px' }).setOrigin(0.5)
-    const ce3 = scene.add.text(16, 8, '🎊', { fontSize: '12px' }).setOrigin(0.5)
+    const ce1 = scene.add.text(0, 0, '🎉', { fontSize: '20px' }).setOrigin(0.5)
+    const ce2 = scene.add.text(-16, 8, '✨', { fontSize: '14px' }).setOrigin(0.5)
+    const ce3 = scene.add.text(16, 8, '🎊', { fontSize: '14px' }).setOrigin(0.5)
     this.celebContainer = scene.add.container(0, this.celebOriginY, [ce1, ce2, ce3])
     this.celebContainer.setVisible(false)
+    items.push(this.celebContainer)
 
-    // ── Assemble (back items first for painter order) ──
-    this.container = scene.add.container(screenX, screenY, [
-      chairG, deskG, monG,
-      body, head,
-      nameBg, nameText,
-      this.thinkBubble, this.celebContainer,
-    ])
+    // ── Assemble ──
+    this.container = scene.add.container(screenX, screenY, items)
+    this.container.setDepth(screenY)
 
     this.applyState(state)
   }
 
   applyState(state: DeveloperState) {
     this.container.setAlpha(state.online ? 1 : 0.3)
+    this.statusDot.setFillStyle(state.online ? 0x3fb950 : 0x666666)
+
+    // ── Activity label ──
+    if (!state.online) {
+      this.activityLabel.setText('')
+    } else if (state.celebrating) {
+      this.activityLabel.setText('🎉 pushed!')
+    } else if (state.thinking && state.activeAgent) {
+      const agentShort = state.activeAgent.replace(/^crombie[:-]/, '')
+      this.activityLabel.setText(`🤖 ${agentShort} thinking`)
+    } else if (state.thinking) {
+      this.activityLabel.setText('🤔 thinking...')
+    } else if (state.online) {
+      this.activityLabel.setText('💻 ready')
+    }
 
     if (state.thinking) {
       this.thinkBubble.setVisible(true)
@@ -99,7 +126,7 @@ export class Avatar {
       this.celebContainer.y = this.celebOriginY
       this.scene.tweens.add({
         targets: this.celebContainer,
-        y: this.celebOriginY - 50,
+        y: this.celebOriginY - 60,
         alpha: { from: 1, to: 0 },
         duration: 3000,
         onComplete: () => { this.celebContainer.setVisible(false) },

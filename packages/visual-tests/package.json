@@ -1,0 +1,12 @@
+{
+  "name": "@crombie-office/visual-tests",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "capture": "playwright test screenshots/capture.spec.ts --reporter=list",
+    "install-browsers": "playwright install chromium"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.44.0"
+  }
+}
