@@ -5,17 +5,20 @@ import { drawCube, drawFloorLine, toScreen, Z } from './IsoCube'
 import type { OfficeState, DeveloperState } from '../types'
 
 // ── Layout: 3 connected zones in one large floor ──
-// Total floor: 16 wide × 12 deep
+// Total floor: 24 wide × 16 deep
 // Left: Work area (cols 0-10, rows 0-12)
-// Right-top: Meeting room (cols 10-16, rows 0-6)
-// Right-bottom: Lounge (cols 10-16, rows 6-12)
+// Left-bottom: Open corridor (cols 0-10, rows 12-16)
+// Right-top-near: Meeting rooms (cols 10-16, rows 0-8)
+// Right-bottom-near: Open corridor to lounge (cols 10-16, rows 8-16)
+// Right-top-far: Kitchen (cols 16-24, rows 0-8)
+// Right-bottom-far: Lounge (cols 16-24, rows 8-16)
 // Internal divider wall at col 10, with doorway gaps
-// Horizontal divider at row 6 (right half only)
+// Horizontal divider at row 8 (right side only)
 
-const TOTAL_W = 16
-const TOTAL_H = 12
+const TOTAL_W = 24
+const TOTAL_H = 16
 const DIVIDER_X = 10      // vertical divider at x=10
-const DIVIDER_Y = 6       // horizontal divider at y=6 (right side)
+const DIVIDER_Y = 8       // horizontal divider now at row 8 (was 6)
 
 const WALL_H = 3.2
 const WALL_THICK = 0.3
@@ -50,40 +53,43 @@ const DESK_POSITIONS = [
 interface FurnitureDef { key: string; tx: number; ty: number; scale: number; depth?: number }
 
 const STATIC_FURNITURE: FurnitureDef[] = [
-  // ── Meeting room (right-top: x=10-16, y=0-6) ──
+  // ── Meeting room (right-top: x=10-16, y=0-8) ──
   { key: 'tableRound_SE',   tx: 13,   ty: 2.8,  scale: 0.5 },
   { key: 'chairDesk_SE',    tx: 11.8, ty: 2.2,  scale: 0.4 },
   { key: 'chairDesk_SW',    tx: 14.2, ty: 2.2,  scale: 0.4 },
   { key: 'chairDesk_SE',    tx: 12,   ty: 4,    scale: 0.4 },
   { key: 'chairDesk_SW',    tx: 14,   ty: 4,    scale: 0.4 },
 
-  // ── Lounge (right-bottom: x=10-16, y=6-12) ──
-  { key: 'loungeSofa_SE',        tx: 11.5, ty: 8.5,  scale: 0.42 }, //rojo dos cuerpos
-  { key: 'loungeDesignSofa_SW',  tx: 14.5, ty: 8.5,  scale: 0.42 }, //azul
-  { key: 'loungeChair_SE',       tx: 11.5, ty: 10.5,  scale: 0.42 }, //rojo un cuerpo
-  { key: 'tableCoffeeGlassSquare_SE', tx: 13, ty: 8.8, scale: 0.45 }, 
+  // ── Lounge (right-bottom: x=16-24, y=8-16) ──
+  { key: 'loungeSofa_SE',             tx: 18,   ty: 10.5, scale: 0.42 },
+  { key: 'loungeDesignSofa_SW',       tx: 22,   ty: 10.5, scale: 0.42 },
+  { key: 'loungeChair_SE',            tx: 18,   ty: 12.5, scale: 0.42 },
+  { key: 'tableCoffeeGlassSquare_SE', tx: 20,   ty: 11,   scale: 0.45 },
+  { key: 'lampRoundFloor_SE',         tx: 23.2, ty: 14.5, scale: 0.5 },
 
-  // ── Decorative plants ──
-  { key: 'pottedPlant_SE', tx: 0.5,  ty: 0.5,  scale: 0.9 },
-  { key: 'pottedPlant_SE', tx: 9.3,  ty: 0.5,  scale: 0.9 },
-  { key: 'pottedPlant_SE', tx: 0.5,  ty: 11.2, scale: 0.9 },
-  { key: 'plantSmall2_SE', tx: 15.3, ty: 0.5,  scale: 1.0 },
-  { key: 'plantSmall3_SE', tx: 15.3, ty: 11.2, scale: 1.0 },
-  { key: 'plantSmall1_SE', tx: 10.5, ty: 6.5,  scale: 0.9 },
+  // ── Kitchen (right-top: x=16-24, y=0-8) ──
+  { key: 'sideTableDrawers_SE', tx: 17,   ty: 0.5, scale: 0.45 },
+  { key: 'sideTable_SE',        tx: 19,   ty: 0.5, scale: 0.45 },
+  { key: 'sideTableDrawers_SE', tx: 21,   ty: 0.5, scale: 0.45 },
+  { key: 'tableRound_SE',       tx: 19.5, ty: 5.5, scale: 0.45 },
+  { key: 'chairDesk_SE',        tx: 18.5, ty: 5,   scale: 0.38 },
+  { key: 'chairDesk_SW',        tx: 20.5, ty: 5,   scale: 0.38 },
+  { key: 'lampSquareFloor_SE',  tx: 22.5, ty: 7.5, scale: 0.5 },
+
+  // ── Decorative plants (spread across expanded floor) ──
+  { key: 'pottedPlant_SE',  tx: 0.5,  ty: 0.5,  scale: 0.9 },
+  { key: 'pottedPlant_SE',  tx: 9.3,  ty: 0.5,  scale: 0.9 },
+  { key: 'pottedPlant_SE',  tx: 0.5,  ty: 11.2, scale: 0.9 },
+  { key: 'plantSmall2_SE',  tx: 23.2, ty: 0.5,  scale: 1.0 },
+  { key: 'plantSmall3_SE',  tx: 23.2, ty: 8.5,  scale: 1.0 },
+  { key: 'plantSmall1_SE',  tx: 16.5, ty: 8.5,  scale: 0.9 },
+  { key: 'pottedPlant_SE',  tx: 0.5,  ty: 15.2, scale: 0.9 },
 
   // ── Bookshelves along NW wall (work area) ──
   { key: 'bookcaseOpen_SE',      tx: 0.4, ty: 3,    scale: 0.45 },
   { key: 'bookcaseClosed_SE',    tx: 0.4, ty: 5,    scale: 0.45 },
   { key: 'bookcaseClosedWide_SE', tx: 0.4, ty: 7,   scale: 0.4 },
   { key: 'bookcaseOpen_SE',      tx: 0.4, ty: 9,    scale: 0.45 },
-
-  // ── Side table / cabinet along NE wall ──
-  { key: 'sideTableDrawers_SE',  tx: 3,   ty: 0.4,  scale: 0.45 },
-  { key: 'sideTable_SE',         tx: 6,   ty: 0.4,  scale: 0.45 },
-
-  // ── Lamps ──
-  { key: 'lampRoundFloor_SE',    tx: 10.5, ty: 10.5, scale: 0.5 },
-  { key: 'lampSquareFloor_SE',   tx: 15.3, ty: 5.5, scale: 0.5 },
 ]
 
 export class OfficeScene extends Phaser.Scene {
@@ -94,6 +100,7 @@ export class OfficeScene extends Phaser.Scene {
   private pendingState?: OfficeState
   private ox = 0
   private oy = 0
+  private _dragStart: { x: number; y: number } | null = null
 
   constructor() { super({ key: 'OfficeScene' }) }
 
@@ -120,12 +127,28 @@ export class OfficeScene extends Phaser.Scene {
     this.ox = this.scale.width / 2 - center.x
     this.oy = this.scale.height / 2 - center.y + WALL_H * 10
 
+    // Camera pan setup
+    const cam = this.cameras.main
+    cam.setBounds(this.ox - 100, this.oy - 100, (TOTAL_W + 2) * 64, (TOTAL_H + 2) * 32)
+    this.input.on('pointerdown', (p: Phaser.Input.Pointer) => {
+      this._dragStart = { x: cam.scrollX + p.x, y: cam.scrollY + p.y }
+    })
+    this.input.on('pointermove', (p: Phaser.Input.Pointer) => {
+      if (p.isDown && this._dragStart) {
+        cam.scrollX = this._dragStart.x - p.x
+        cam.scrollY = this._dragStart.y - p.y
+      }
+    })
+    this.input.on('pointerup', () => { this._dragStart = null })
+
     this.drawFloorAndWalls()
     this.drawInternalDividers()
     this.drawWallDecorations()
     this.placeStaticFurniture()
+    this.drawKitchenCounter()
     this.drawPingPongTable()
     this.drawZoneLabels()
+    this.drawLogoMural()
 
     if (this.pendingState) {
       this.applyFullState(this.pendingState)
@@ -184,22 +207,22 @@ export class OfficeScene extends Phaser.Scene {
     const { ox, oy } = this
     const g = this.add.graphics()
 
-    // Vertical divider at x=10 (with doorway gap at y=3-5 and y=8-10)
+    // Vertical divider at x=10 (with doorway gap at y=3-5)
     // Segment 1: y=0 to y=3
     drawCube(g, ox, oy, DIVIDER_X, 0, FLOOR_H, WALL_THICK, 3, DIVIDER_H,
       DIV_C.top, DIV_C.left, DIV_C.right)
-    // Segment 2: y=5 to y=8 (gap at 3-5 for meeting room door, gap at 8-10 for lounge door)
+    // Gap: y=3-5 (doorway for meeting room)
+    // Segment 2: y=5 to y=8 (rest of meeting room wall)
     drawCube(g, ox, oy, DIVIDER_X, 5, FLOOR_H, WALL_THICK, 3, DIVIDER_H,
       DIV_C.top, DIV_C.left, DIV_C.right)
-    // Segment 3: y=10 to y=12
-    drawCube(g, ox, oy, DIVIDER_X, 10, FLOOR_H, WALL_THICK, 2, DIVIDER_H,
-      DIV_C.top, DIV_C.left, DIV_C.right)
+    // No more segments below y=8 (open corridor to lounge)
 
-    // Horizontal divider at y=6 (right side only, x=10 to x=16, doorway at x=12-14)
-    drawCube(g, ox, oy, DIVIDER_X, DIVIDER_Y, FLOOR_H, 2, WALL_THICK, DIVIDER_H,
+    // Horizontal divider at y=8 between meeting rooms and open corridor
+    drawCube(g, ox, oy, DIVIDER_X, DIVIDER_Y, FLOOR_H, 2.5, WALL_THICK, DIVIDER_H,
       DIV_C.top, DIV_C.left, DIV_C.right)
     drawCube(g, ox, oy, 14, DIVIDER_Y, FLOOR_H, 2, WALL_THICK, DIVIDER_H,
       DIV_C.top, DIV_C.left, DIV_C.right)
+    // Gap at x=12.5-14 for doorway between meeting and corridor
   }
 
   private drawWallDecorations() {
@@ -220,14 +243,14 @@ export class OfficeScene extends Phaser.Scene {
     g.lineStyle(2, 0x555566, 0.8)
     g.strokePoints(wbCorners.map(c => ({ x: ox + c.x, y: oy + c.y })), true)
 
-    // TV screen on NE wall (above meeting room)
-    drawCube(g, ox, oy, 12, -WALL_THICK + 0.01, artZ, 2.5, 0.05, 1.1,
+    // TV screen on NE wall (above kitchen/lounge zone)
+    drawCube(g, ox, oy, 19, -WALL_THICK + 0.01, artZ, 2.5, 0.05, 1.1,
       0x222233, 0x1a1a2e, 0x1e1e30)
-    drawCube(g, ox, oy, 12.15, -WALL_THICK + 0.02, artZ + 0.1, 2.2, 0.03, 0.9,
+    drawCube(g, ox, oy, 19.15, -WALL_THICK + 0.02, artZ + 0.1, 2.2, 0.03, 0.9,
       0x3366aa, 0x2255aa, 0x2860aa)
 
-    // Windows on NW wall
-    for (const wy of [1.5, 4, 6.5, 9]) {
+    // Windows on NW wall (extended to cover full new height)
+    for (const wy of [1.5, 4, 6.5, 9, 11.5, 13.5]) {
       drawCube(g, ox, oy, -WALL_THICK + 0.01, wy, artZ, 0.05, 1.8, 1.2,
         0x88bbdd, 0x6699bb, 0x77aacc)
     }
@@ -246,6 +269,12 @@ export class OfficeScene extends Phaser.Scene {
     const workSign = toScreen(5, -WALL_THICK + 0.03, FLOOR_H + WALL_H * 0.75)
     this.add.text(ox + workSign.x, oy + workSign.y, '💻 DEV FLOOR', {
       fontSize: '7px', color: '#33c566', fontFamily: 'monospace',
+    }).setOrigin(0.5)
+
+    // Kitchen sign
+    const kitchenSign = toScreen(20, -WALL_THICK + 0.03, FLOOR_H + WALL_H * 0.75)
+    this.add.text(ox + kitchenSign.x, oy + kitchenSign.y, '🍳 KITCHEN', {
+      fontSize: '7px', color: '#fecc33', fontFamily: 'monospace',
     }).setOrigin(0.5)
   }
 
@@ -268,11 +297,31 @@ export class OfficeScene extends Phaser.Scene {
     }
   }
 
+  private drawKitchenCounter() {
+    const { ox, oy } = this
+    const g = this.add.graphics()
+    // Kitchen counter along NE wall in kitchen zone
+    // Horizontal counter: tx=16.5 to 22.5, ty=0.1 (along top NE wall)
+    drawCube(g, ox, oy, 16.5, 0.1, FLOOR_H, 6, 0.7, 0.85,
+      0xe8e0d0, 0xd5ccbc, 0xcec5b5)
+    // Countertop (darker surface)
+    drawCube(g, ox, oy, 16.5, 0.1, FLOOR_H + 0.85, 6, 0.7, 0.07,
+      0x5a5048, 0x4a4038, 0x504540)
+    // Coffee machine (small dark box with Crombie green accent)
+    drawCube(g, ox, oy, 19, 0.12, FLOOR_H + 0.85, 0.5, 0.45, 0.5,
+      0x1a1a1a, 0x111111, 0x161616)
+    drawCube(g, ox, oy, 19.05, 0.13, FLOOR_H + 1.15, 0.3, 0.02, 0.15,
+      0x33c566, 0x1d5c30, 0x267a40)
+    // Depth
+    const depthPos = toScreen(19, 0.5, FLOOR_H)
+    g.setDepth(oy + depthPos.y + 10)
+  }
+
   private drawPingPongTable() {
     const { ox, oy } = this
     const g = this.add.graphics()
     // Ping pong table in the lounge: green top, dark legs
-    const ptx = 13, pty = 10, ptz = FLOOR_H
+    const ptx = 19.5, pty = 13, ptz = FLOOR_H
     const tw = 2.2, td = 1.2, tHeight = 0.6
 
     // Table legs (4 dark cubes)
@@ -305,15 +354,34 @@ export class OfficeScene extends Phaser.Scene {
   private drawZoneLabels() {
     const { ox, oy } = this
     const labels: Array<{ text: string; tx: number; ty: number; color?: string }> = [
-      { text: '☕ LOUNGE', tx: 13, ty: 8 },
-      { text: '🏓 GAME', tx: 13, ty: 11 },
-      { text: '📋 SALA 2', tx: 13, ty: 10.5, color: '#25B2E2' },
+      { text: '☕ LOUNGE',  tx: 20, ty: 12, color: '#25B2E2' },
+      { text: '🏓 GAME',   tx: 20, ty: 14, color: '#999' },
+      { text: '📋 SALA 2', tx: 13, ty: 5,  color: '#25B2E2' },
+      { text: '🍳 KITCHEN', tx: 20, ty: 4, color: '#fecc33' },
     ]
     for (const l of labels) {
       const p = toScreen(l.tx, l.ty, FLOOR_H)
       this.add.text(ox + p.x, oy + p.y, l.text, {
         fontSize: '7px', color: l.color ?? '#999', fontFamily: 'monospace',
       }).setOrigin(0.5).setAlpha(0.5)
+    }
+  }
+
+  private drawLogoMural() {
+    const { ox, oy } = this
+    const g = this.add.graphics()
+    const bars = [
+      { color: 0xe879a0, ty: 9.0,  width: 2.2 },
+      { color: 0x67c8e8, ty: 9.5,  width: 1.8 },
+      { color: 0x9879d8, ty: 10.0, width: 0.6 },
+      { color: 0xfcd860, ty: 10.5, width: 2.0 },
+      { color: 0x68e898, ty: 11.0, width: 1.5 },
+      { color: 0xe879a0, ty: 11.5, width: 0.4 },
+    ]
+    for (const bar of bars) {
+      drawCube(g, ox, oy, -WALL_THICK + 0.01, bar.ty, FLOOR_H + WALL_H * 0.4,
+        0.04, bar.width, 0.22,
+        bar.color, bar.color - 0x101010, bar.color - 0x080808, 0.45)
     }
   }
 
