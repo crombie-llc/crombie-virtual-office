@@ -72,24 +72,24 @@ test('capture: one dev thinking', async ({ page }) => {
   await capture(page, '03-dev-thinking')
 })
 
-test('capture: dev with crombie-explorer mascot (owl)', async ({ page }) => {
+test('capture: dev with crombie-explorer mascot (robot)', async ({ page }) => {
   await resetState()
   await postEvent({ dev: 'alice', type: 'session_start', color: '#4a9eff', ts: Date.now() })
   await postEvent({ dev: 'alice', type: 'agent_start', agent: 'crombie-explorer', ts: Date.now() })
   await page.goto('/')
   await waitForOffice(page)
   await page.waitForTimeout(300)
-  await capture(page, '04-mascot-owl-explorer')
+  await capture(page, '04-mascot-robot-explorer')
 })
 
-test('capture: dev with crombie-worker mascot (beaver)', async ({ page }) => {
+test('capture: dev with crombie-worker mascot (robot)', async ({ page }) => {
   await resetState()
   await postEvent({ dev: 'bob', type: 'session_start', color: '#3fb950', ts: Date.now() })
   await postEvent({ dev: 'bob', type: 'agent_start', agent: 'crombie-worker', ts: Date.now() })
   await page.goto('/')
   await waitForOffice(page)
   await page.waitForTimeout(300)
-  await capture(page, '05-mascot-beaver-worker')
+  await capture(page, '05-mascot-robot-worker')
 })
 
 test('capture: three devs mixed states', async ({ page }) => {
@@ -134,26 +134,4 @@ test('capture: celebration burst', async ({ page }) => {
   await postEvent({ dev: 'alice', type: 'commit', ts: Date.now() })
   await page.waitForTimeout(600) // catch confetti at peak
   await capture(page, '08-celebration')
-})
-
-test('capture: ground floor empty', async ({ page }) => {
-  await resetState()
-  await page.goto('/')
-  await waitForOffice(page)
-  // Click the floor toggle button to switch to ground floor
-  await page.click('button:has-text("Planta Baja")')
-  await page.waitForTimeout(800)
-  await capture(page, '09-ground-floor-empty')
-})
-
-test('capture: ground floor with devs (Piso 2 context)', async ({ page }) => {
-  await resetState()
-  await postEvent({ dev: 'alice', type: 'session_start', color: '#4a9eff', ts: Date.now() })
-  await postEvent({ dev: 'bob',   type: 'session_start', color: '#3fb950', ts: Date.now() })
-  await page.goto('/')
-  await waitForOffice(page)
-  // Switch to ground floor (devs are shown on office floor, but ground floor shows the space)
-  await page.click('button:has-text("Planta Baja")')
-  await page.waitForTimeout(800)
-  await capture(page, '10-ground-floor-with-devs')
 })
