@@ -341,7 +341,7 @@ export class OfficeScene extends Phaser.Scene {
       const screenY = oy + pos.y
 
       if (!this.avatars.has(devName)) {
-        this.avatars.set(devName, new Avatar(this, screenX, screenY, idx, devState))
+        this.avatars.set(devName, new Avatar(this, screenX, screenY, this.ox, this.oy, idx, devState))
       } else {
         this.avatars.get(devName)!.applyState(devState)
       }

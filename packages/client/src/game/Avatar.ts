@@ -1,4 +1,5 @@
 import Phaser from 'phaser'
+import { toScreen } from './IsoCube'
 import type { DeveloperState } from '../types'
 
 /**
@@ -6,6 +7,17 @@ import type { DeveloperState } from '../types'
  * Characters are 256x512 with figure occupying ~bottom 55%.
  * We use alternating Human_ and Male_ sprites for variety.
  */
+
+const FLOOR_H = 0.12
+
+const IDLE_WAYPOINTS = [
+  { tx: 3, ty: 5 }, { tx: 6, ty: 3 }, { tx: 4, ty: 8 },
+  { tx: 7, ty: 7 }, { tx: 2, ty: 11 }, { tx: 5, ty: 10 },
+  { tx: 8, ty: 9 }, { tx: 18, ty: 10 }, { tx: 20, ty: 12 },
+  { tx: 22, ty: 11 }, { tx: 19, ty: 14 }, { tx: 21, ty: 9 },
+  { tx: 6, ty: 13 }, { tx: 9, ty: 12 }, { tx: 3, ty: 14 },
+]
+
 export class Avatar {
   private scene: Phaser.Scene
   private container: Phaser.GameObjects.Container
@@ -15,9 +27,20 @@ export class Avatar {
   private thinkTween?: Phaser.Tweens.Tween
   private statusDot!: Phaser.GameObjects.Arc
   private activityLabel!: Phaser.GameObjects.Text
+  private deskX: number
+  private deskY: number
+  private ox: number
+  private oy: number
+  private wanderTween: Phaser.Tweens.Tween | null = null
+  private wanderTimer: Phaser.Time.TimerEvent | null = null
+  private isWandering = false
 
-  constructor(scene: Phaser.Scene, screenX: number, screenY: number, index: number, state: DeveloperState) {
+  constructor(scene: Phaser.Scene, screenX: number, screenY: number, ox: number, oy: number, index: number, state: DeveloperState) {
     this.scene = scene
+    this.deskX = screenX
+    this.deskY = screenY
+    this.ox = ox
+    this.oy = oy
     const color = parseInt(state.color.replace('#', ''), 16)
     const items: Phaser.GameObjects.GameObject[] = []
 
@@ -88,6 +111,12 @@ export class Avatar {
   }
 
   applyState(state: DeveloperState) {
+    if (state.online && !state.thinking && !state.activeAgent && !state.celebrating) {
+      if (!this.isWandering) this.startWander()
+    } else {
+      if (this.isWandering) this.returnToDesk()
+    }
+
     this.container.setAlpha(state.online ? 1 : 0.3)
     this.statusDot.setFillStyle(state.online ? 0x3fb950 : 0x666666)
 
@@ -134,7 +163,49 @@ export class Avatar {
     }
   }
 
+  startWander() {
+    this.isWandering = true
+    this.pickNextWaypoint()
+  }
+
+  private pickNextWaypoint() {
+    if (!this.isWandering) return
+    const wp = IDLE_WAYPOINTS[Math.floor(Math.random() * IDLE_WAYPOINTS.length)]
+    const pos = toScreen(wp.tx, wp.ty, FLOOR_H)
+    const targetX = this.ox + pos.x
+    const targetY = this.oy + pos.y
+    const dist = Math.hypot(targetX - this.container.x, targetY - this.container.y)
+    this.wanderTween = this.scene.tweens.add({
+      targets: this.container,
+      x: targetX, y: targetY,
+      duration: Math.max(600, dist * 1.8),
+      ease: 'Linear',
+      onComplete: () => {
+        this.container.setDepth(this.container.y)
+        this.wanderTimer = this.scene.time.delayedCall(
+          2000 + Math.random() * 2000, () => this.pickNextWaypoint()
+        )
+      },
+    })
+  }
+
+  returnToDesk() {
+    this.isWandering = false
+    this.wanderTimer?.remove()
+    this.wanderTimer = null
+    this.scene.tweens.killTweensOf(this.container)
+    this.wanderTween = null
+    this.scene.tweens.add({
+      targets: this.container, x: this.deskX, y: this.deskY,
+      duration: 600, ease: 'Sine.easeInOut',
+      onComplete: () => this.container.setDepth(this.deskY),
+    })
+  }
+
   destroy() {
+    this.isWandering = false
+    this.wanderTimer?.remove()
+    this.scene.tweens.killTweensOf(this.container)
     this.thinkTween?.stop()
     this.container.destroy()
   }
