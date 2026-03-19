@@ -5,7 +5,7 @@ import { PresenceBoard } from './fallback/PresenceBoard'
 const WS_URL = (import.meta as { env?: { VITE_WS_URL?: string } }).env?.VITE_WS_URL ?? 'ws://localhost:4242'
 
 const OfficeGame = lazy(() =>
-  import('./game/OfficeGame').catch(() => ({ default: () => null }))
+  import('./game/OfficeGame').catch(() => ({ default: () => <></> }))
 )
 
 interface ErrorBoundaryProps {
