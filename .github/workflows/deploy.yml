@@ -52,7 +52,7 @@ jobs:
       - name: Build client
         run: npm run build --workspace=packages/client
         env:
-          VITE_WS_URL: wss://office.labs.crombie.dev
+          VITE_WS_URL: wss://office.coe.crombie.dev
 
       - name: Sync to S3
         run: aws s3 sync packages/client/dist s3://${{ secrets.S3_BUCKET }} --delete

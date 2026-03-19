@@ -4,8 +4,8 @@ variable "region" {
 }
 
 variable "domain" {
-  description = "Parent hosted zone domain"
-  default     = "labs.crombie.dev"
+  description = "Hosted zone domain (must already exist in Route53)"
+  default     = "coe.crombie.dev"
 }
 
 variable "server_sub" {
@@ -25,5 +25,10 @@ variable "bucket_name" {
 
 variable "ssh_public_key" {
   description = "SSH public key for EC2 access (paste contents of ~/.ssh/id_rsa.pub)"
+  type        = string
+}
+
+variable "my_ip" {
+  description = "Your public IP in CIDR notation (e.g. 1.2.3.4/32) — restricts SSH access to only your machine"
   type        = string
 }

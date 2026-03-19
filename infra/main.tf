@@ -18,13 +18,10 @@ provider "aws" {
   region = "us-east-1"
 }
 
-# ── Route53 hosted zone ───────────────────────────────────────────────────────
-# If labs.crombie.dev already has a hosted zone in Route53, replace this resource
-# with: data "aws_route53_zone" "labs" { name = var.domain }
-# and update all references from aws_route53_zone.labs.zone_id to
-# data.aws_route53_zone.labs.zone_id
-resource "aws_route53_zone" "labs" {
-  name = var.domain
+# ── Route53 hosted zone (existing — coe.crombie.dev is already active) ────────
+data "aws_route53_zone" "coe" {
+  name         = var.domain
+  private_zone = false
 }
 
 # ── EC2 Key Pair ──────────────────────────────────────────────────────────────
@@ -39,15 +36,15 @@ resource "aws_security_group" "office_server" {
   description = "Allow HTTP, HTTPS and SSH to the virtual office server"
 
   ingress {
-    description = "SSH"
+    description = "SSH — restricted to deployer IP only"
     from_port   = 22
     to_port     = 22
     protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
+    cidr_blocks = ["${var.my_ip}/32"]
   }
 
   ingress {
-    description = "HTTP (redirect to HTTPS via Nginx)"
+    description = "HTTP (redirected to HTTPS by Nginx)"
     from_port   = 80
     to_port     = 80
     protocol    = "tcp"
@@ -109,7 +106,7 @@ resource "aws_eip" "office_server" {
 
 # ── Route53: server A record ──────────────────────────────────────────────────
 resource "aws_route53_record" "server" {
-  zone_id = aws_route53_zone.labs.zone_id
+  zone_id = data.aws_route53_zone.coe.zone_id
   name    = "${var.server_sub}.${var.domain}"
   type    = "A"
   ttl     = 300
@@ -130,7 +127,7 @@ resource "aws_s3_bucket_public_access_block" "client" {
 }
 
 # ── ACM Certificate (wildcard, covers both subdomains) ────────────────────────
-resource "aws_acm_certificate" "labs" {
+resource "aws_acm_certificate" "office" {
   provider          = aws.us_east_1
   domain_name       = "*.${var.domain}"
   validation_method = "DNS"
@@ -142,23 +139,23 @@ resource "aws_acm_certificate" "labs" {
 
 resource "aws_route53_record" "cert_validation" {
   for_each = {
-    for dvo in aws_acm_certificate.labs.domain_validation_options : dvo.domain_name => {
+    for dvo in aws_acm_certificate.office.domain_validation_options : dvo.domain_name => {
       name   = dvo.resource_record_name
       record = dvo.resource_record_value
       type   = dvo.resource_record_type
     }
   }
 
-  zone_id = aws_route53_zone.labs.zone_id
+  zone_id = data.aws_route53_zone.coe.zone_id
   name    = each.value.name
   type    = each.value.type
   ttl     = 60
   records = [each.value.record]
 }
 
-resource "aws_acm_certificate_validation" "labs" {
+resource "aws_acm_certificate_validation" "office" {
   provider                = aws.us_east_1
-  certificate_arn         = aws_acm_certificate.labs.arn
+  certificate_arn         = aws_acm_certificate.office.arn
   validation_record_fqdns = [for record in aws_route53_record.cert_validation : record.fqdn]
 }
 
@@ -213,7 +210,7 @@ resource "aws_cloudfront_distribution" "client" {
   }
 
   viewer_certificate {
-    acm_certificate_arn      = aws_acm_certificate_validation.labs.certificate_arn
+    acm_certificate_arn      = aws_acm_certificate_validation.office.certificate_arn
     ssl_support_method       = "sni-only"
     minimum_protocol_version = "TLSv1.2_2021"
   }
@@ -240,7 +237,7 @@ resource "aws_s3_bucket_policy" "client" {
 
 # ── Route53: client CNAME → CloudFront ───────────────────────────────────────
 resource "aws_route53_record" "client" {
-  zone_id = aws_route53_zone.labs.zone_id
+  zone_id = data.aws_route53_zone.coe.zone_id
   name    = "${var.client_sub}.${var.domain}"
   type    = "CNAME"
   ttl     = 300

@@ -21,7 +21,7 @@ npm ci --workspace=packages/server
 npm run build --workspace=packages/server
 
 # ── Start server under pm2 ───────────────────────────────────────────────────
-PORT=3001 CORS_ORIGIN=https://office-app.labs.crombie.dev \
+PORT=3001 CORS_ORIGIN=https://office-app.coe.crombie.dev \
   pm2 start packages/server/dist/index.js --name crombie-office
 pm2 save
 
@@ -33,7 +33,7 @@ systemctl enable pm2-ubuntu
 cat > /etc/nginx/sites-available/crombie-office << 'EOF'
 server {
     listen 80;
-    server_name office.labs.crombie.dev;
+    server_name office.coe.crombie.dev;
 
     location / {
         proxy_pass http://localhost:3001;
@@ -54,5 +54,5 @@ nginx -t && systemctl reload nginx
 # ── NOTE ──────────────────────────────────────────────────────────────────────
 # HTTPS (Let's Encrypt) must be configured AFTER DNS propagates.
 # Once `terraform output ec2_ip` is pointed at by Route53, run manually:
-#   ssh ubuntu@<ec2_ip> "sudo certbot --nginx -d office.labs.crombie.dev \
+#   ssh ubuntu@<ec2_ip> "sudo certbot --nginx -d office.coe.crombie.dev \
 #     --non-interactive --agree-tos -m devops@crombie.dev"
