@@ -284,10 +284,8 @@ export class Avatar {
   private container: Phaser.GameObjects.Container
   private charGraphics: Phaser.GameObjects.Graphics
   private chairGraphics: Phaser.GameObjects.Graphics
-  private thinkBubble!: Phaser.GameObjects.Container
   private celebContainer!: Phaser.GameObjects.Container
   private celebOriginY = -80
-  private thinkTween?: Phaser.Tweens.Tween
   private statusDot!: Phaser.GameObjects.Arc
   private activityLabel!: Phaser.GameObjects.Text
   private deskX: number
@@ -348,23 +346,12 @@ export class Avatar {
     items.push(pill, nameText, this.statusDot)
 
     // ── Activity label ──
-    const activityText = scene.add.text(0, -56, '', {
+    const activityText = scene.add.text(0, -58, '', {
       fontSize: '9px', color: '#25B2E2', fontFamily: 'monospace',
       backgroundColor: '#0d0d1a', padding: { x: 5, y: 2 },
     }).setOrigin(0.5, 0.5).setAlpha(0.9)
     this.activityLabel = activityText
     items.push(activityText)
-
-    // ── Thinking bubble ──
-    const bubBg = scene.add.rectangle(0, 0, 52, 18, 0xffffff, 0.95)
-      .setStrokeStyle(1, 0xcccccc)
-    const dots = scene.add.text(0, 0, '• • •', {
-      fontSize: '10px', color: '#555', fontFamily: 'monospace',
-    }).setOrigin(0.5)
-    const tail = scene.add.triangle(0, 11, -3, 0, 3, 0, 0, 6, 0xffffff)
-    this.thinkBubble = scene.add.container(0, -52, [bubBg, dots, tail])
-    this.thinkBubble.setVisible(false)
-    items.push(this.thinkBubble)
 
     // ── Celebration ──
     const ce1 = scene.add.text(0, 0, '🎉', { fontSize: '20px' }).setOrigin(0.5)
@@ -417,21 +404,6 @@ export class Avatar {
       this.activityLabel.setText('🚶 on the move')
     } else if (state.online) {
       this.activityLabel.setText('💻 working')
-    }
-
-    // ── Thinking bubble ──
-    if (state.thinking) {
-      this.thinkBubble.setVisible(true)
-      if (!this.thinkTween) {
-        this.thinkTween = this.scene.tweens.add({
-          targets: this.thinkBubble, alpha: { from: 0.4, to: 1 },
-          yoyo: true, repeat: -1, duration: 600,
-        })
-      }
-    } else {
-      this.thinkBubble.setVisible(false)
-      this.thinkTween?.stop()
-      this.thinkTween = undefined
     }
 
     // ── Celebration ──
@@ -777,7 +749,6 @@ export class Avatar {
 
   destroy() {
     this.cancelBehavior()
-    this.thinkTween?.stop()
     this.container.destroy()
   }
 }

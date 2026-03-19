@@ -3,5 +3,11 @@ dist/
 .env
 *.lock
 
-# Terraform — downloaded providers (large binaries, never commit)
+# Terraform — downloaded providers and state (never commit)
 infra/.terraform/
+infra/terraform.tfstate
+infra/terraform.tfstate.backup
+
+# TypeScript compiled output in src/ (tsc artifacts)
+packages/client/src/**/*.js
+packages/*/src/**/*.js

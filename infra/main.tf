@@ -36,7 +36,7 @@ resource "aws_security_group" "office_server" {
   description = "Allow HTTP, HTTPS and SSH to the virtual office server"
 
   ingress {
-    description = "SSH — restricted to deployer IP only"
+    description = "SSH - restricted to deployer IP only"
     from_port   = 22
     to_port     = 22
     protocol    = "tcp"
@@ -44,7 +44,7 @@ resource "aws_security_group" "office_server" {
   }
 
   ingress {
-    description = "HTTP (redirected to HTTPS by Nginx)"
+    description = "HTTP - redirected to HTTPS by Nginx"
     from_port   = 80
     to_port     = 80
     protocol    = "tcp"
@@ -65,6 +65,11 @@ resource "aws_security_group" "office_server" {
     protocol    = "-1"
     cidr_blocks = ["0.0.0.0/0"]
   }
+}
+
+# ── Default subnet (restores it if it was deleted) ───────────────────────────
+resource "aws_default_subnet" "default_az1" {
+  availability_zone = "${var.region}a"
 }
 
 # ── Latest Ubuntu 24.04 AMI ───────────────────────────────────────────────────
@@ -89,6 +94,8 @@ resource "aws_instance" "office_server" {
   instance_type          = "t2.micro"
   key_name               = aws_key_pair.deploy.key_name
   vpc_security_group_ids = [aws_security_group.office_server.id]
+
+  subnet_id = aws_default_subnet.default_az1.id
 
   # Bootstrap script runs on first boot — installs Node, pm2, Nginx, clones repo
   user_data = file("${path.module}/user_data.sh")
@@ -128,9 +135,10 @@ resource "aws_s3_bucket_public_access_block" "client" {
 
 # ── ACM Certificate (wildcard, covers both subdomains) ────────────────────────
 resource "aws_acm_certificate" "office" {
-  provider          = aws.us_east_1
-  domain_name       = "*.${var.domain}"
-  validation_method = "DNS"
+  provider                  = aws.us_east_1
+  domain_name               = "*.${var.domain}"
+  subject_alternative_names = [var.domain]
+  validation_method         = "DNS"
 
   lifecycle {
     create_before_destroy = true
@@ -146,11 +154,12 @@ resource "aws_route53_record" "cert_validation" {
     }
   }
 
-  zone_id = data.aws_route53_zone.coe.zone_id
-  name    = each.value.name
-  type    = each.value.type
-  ttl     = 60
-  records = [each.value.record]
+  zone_id         = data.aws_route53_zone.coe.zone_id
+  name            = each.value.name
+  type            = each.value.type
+  ttl             = 60
+  records         = [each.value.record]
+  allow_overwrite = true
 }
 
 resource "aws_acm_certificate_validation" "office" {
@@ -171,7 +180,7 @@ resource "aws_cloudfront_origin_access_control" "client" {
 resource "aws_cloudfront_distribution" "client" {
   enabled             = true
   default_root_object = "index.html"
-  aliases             = ["${var.client_sub}.${var.domain}"]
+  aliases             = [var.domain]
 
   origin {
     domain_name              = aws_s3_bucket.client.bucket_regional_domain_name
@@ -235,11 +244,15 @@ resource "aws_s3_bucket_policy" "client" {
   })
 }
 
-# ── Route53: client CNAME → CloudFront ───────────────────────────────────────
-resource "aws_route53_record" "client" {
+# ── Route53: apex ALIAS → CloudFront (coe.crombie.dev) ───────────────────────
+resource "aws_route53_record" "client_apex" {
   zone_id = data.aws_route53_zone.coe.zone_id
-  name    = "${var.client_sub}.${var.domain}"
-  type    = "CNAME"
-  ttl     = 300
-  records = [aws_cloudfront_distribution.client.domain_name]
+  name    = var.domain
+  type    = "A"
+
+  alias {
+    name                   = aws_cloudfront_distribution.client.domain_name
+    zone_id                = aws_cloudfront_distribution.client.hosted_zone_id
+    evaluate_target_health = false
+  }
 }

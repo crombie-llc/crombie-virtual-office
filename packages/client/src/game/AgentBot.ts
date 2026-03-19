@@ -1,59 +1,74 @@
 import Phaser from 'phaser'
-import type { MascotConfig } from '../types'
 import { toScreen } from './IsoCube'
 
 const FLOOR_H = 0.12
 
-function drawRobot(g: Phaser.GameObjects.Graphics, config: MascotConfig) {
-  // Body (main cube face — front)
-  g.fillStyle(config.color, 1)
-  g.fillRect(-10, -10, 20, 18)
+/**
+ * Draw a small isometric cube centered at origin.
+ * W = half-width of top diamond, H = vertical half of top diamond, D = side depth.
+ */
+function drawIsoCube(
+  g: Phaser.GameObjects.Graphics,
+  topColor: number,
+  leftColor: number,
+  rightColor: number,
+) {
+  const W = 9, H = 5, D = 10
 
-  // Body shading (right face)
-  g.fillStyle(config.accentColor, 1)
-  g.fillRect(10, -7, 5, 15)
+  // Top face (rhombus)
+  g.fillStyle(topColor, 1)
+  g.fillPoints([
+    { x: 0,  y: -H - D },
+    { x: W,  y: -D },
+    { x: 0,  y:  H - D },
+    { x: -W, y: -D },
+  ], true)
 
-  // Body shading (top face)
-  g.fillStyle(config.accentColor, 1)
-  g.fillRect(-7, -14, 20, 5)
+  // Left face
+  g.fillStyle(leftColor, 1)
+  g.fillPoints([
+    { x: -W, y: -D },
+    { x: 0,  y:  H - D },
+    { x: 0,  y:  H },
+    { x: -W, y:  0 },
+  ], true)
 
-  // Eyes
-  g.fillStyle(0x4ac8ff, 1)
-  g.fillRect(-6, -6, 4, 4)
-  g.fillRect(3, -6, 4, 4)
-
-  // Mouth
-  g.fillStyle(0x4ac8ff, 1)
-  g.fillRect(-4, 2, 9, 2)
-
-  // Antenna base
-  g.fillStyle(config.color, 1)
-  g.fillRect(-2, -14, 4, 4)
-
-  // Antenna tip
-  g.fillStyle(0x4ac8ff, 1)
-  g.fillCircle(0, -17, 3)
+  // Right face
+  g.fillStyle(rightColor, 1)
+  g.fillPoints([
+    { x: 0, y:  H - D },
+    { x: W, y: -D },
+    { x: W, y:  0 },
+    { x: 0, y:  H },
+  ], true)
 }
 
-function getMascotConfig(agentName: string): MascotConfig {
+interface CubeConfig {
+  top: number
+  left: number
+  right: number
+  label: string
+  bounceHeight: number
+}
+
+function getMascotConfig(agentName: string): CubeConfig {
   const name = agentName.toLowerCase()
   if (name.includes('explore')) {
-    return { color: 0x00bcd4, accentColor: 0x4dd0e1, label: '🤖 explore', bounceHeight: 10 }
+    return { top: 0x00bcd4, left: 0x007a8a, right: 0x009aad, label: 'explore', bounceHeight: 10 }
   }
   if (name.includes('architect')) {
-    return { color: 0x3f51b5, accentColor: 0x5c6bc0, label: '🤖 architect', bounceHeight: 8 }
+    return { top: 0x3f51b5, left: 0x283380, right: 0x3344a0, label: 'architect', bounceHeight: 8 }
   }
   if (name.includes('reviewer') || name.includes('review')) {
-    return { color: 0xff9800, accentColor: 0xffb74d, label: '🤖 reviewer', bounceHeight: 9 }
+    return { top: 0xff9800, left: 0xbf7200, right: 0xe08500, label: 'reviewer', bounceHeight: 9 }
   }
   if (name.includes('worker')) {
-    return { color: 0x4caf50, accentColor: 0x81c784, label: '🤖 worker', bounceHeight: 11 }
+    return { top: 0x4caf50, left: 0x307a35, right: 0x3d9642, label: 'worker', bounceHeight: 11 }
   }
   if (name.includes('security')) {
-    return { color: 0xf44336, accentColor: 0xe57373, label: '🤖 security', bounceHeight: 8 }
+    return { top: 0xf44336, left: 0xb52820, right: 0xd8382c, label: 'security', bounceHeight: 8 }
   }
-  // Default / general-purpose
-  return { color: 0x607d8b, accentColor: 0x90a4ae, label: '🤖 agent', bounceHeight: 8 }
+  return { top: 0x607d8b, left: 0x3d5260, right: 0x506878, label: 'agent', bounceHeight: 8 }
 }
 
 export class AgentBot {
@@ -77,21 +92,20 @@ export class AgentBot {
     const x = ox + pos.x
     const y = oy + pos.y
 
-    // Glow halo (smaller)
-    const glow = scene.add.circle(0, 2, 18, config.color, 0.15)
+    // Glow halo
+    const glow = scene.add.circle(0, 0, 16, config.top, 0.18)
     glow.setBlendMode(Phaser.BlendModes.ADD)
 
-    // Robot body (slightly smaller)
+    // Isometric cube body
     const g = scene.add.graphics()
-    g.setScale(0.85)
-    drawRobot(g, config)
+    drawIsoCube(g, config.top, config.left, config.right)
 
-    // Label
-    const label = scene.add.text(0, 20, config.label, {
+    // Label — small, below the cube
+    const label = scene.add.text(0, 14, config.label, {
       fontSize: '7px',
       color: '#ffffff',
       fontFamily: 'monospace',
-      backgroundColor: '#00000088',
+      backgroundColor: '#00000099',
       padding: { x: 3, y: 1 },
     }).setOrigin(0.5, 0)
 
