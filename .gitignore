@@ -2,3 +2,6 @@ node_modules/
 dist/
 .env
 *.lock
+
+# Terraform — downloaded providers (large binaries, never commit)
+infra/.terraform/
