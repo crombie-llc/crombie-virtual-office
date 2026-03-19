@@ -152,6 +152,19 @@ export class StateManager {
     }, HEARTBEAT_TIMEOUT_MS))
   }
 
+  /** Clear all state — used by /reset endpoint for visual tests */
+  reset() {
+    this.thinkingTimers.forEach(clearTimeout)
+    this.thinkingTimers.clear()
+    this.celebratingTimers.forEach(clearTimeout)
+    this.celebratingTimers.clear()
+    this.heartbeatTimers.forEach(clearTimeout)
+    this.heartbeatTimers.clear()
+    this.state.clear()
+    // Broadcast empty state so connected clients update
+    this.onPatch?.([])
+  }
+
   destroy() {
     this.thinkingTimers.forEach(clearTimeout)
     this.celebratingTimers.forEach(clearTimeout)

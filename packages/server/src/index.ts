@@ -30,6 +30,17 @@ app.get('/state', (_req, res) => {
   res.json(state.getAll())
 })
 
+app.options('/reset', (_req, res) => { res.sendStatus(204) })
+
+app.post('/reset', (_req, res) => {
+  state.reset()
+  // Also broadcast full (empty) state to all connected WS clients
+  broadcast.broadcast([])
+  // Send full_state to force clients to re-render
+  broadcast.broadcastRaw(JSON.stringify({ type: 'full_state', state: state.getAll() }))
+  res.sendStatus(204)
+})
+
 const server = http.createServer(app)
 const broadcast = new BroadcastServer(server)
 

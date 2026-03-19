@@ -46,6 +46,47 @@ function HudDock({ state }: { state: OfficeState }) {
   )
 }
 
+// ── Zoom Controls ──
+
+function ZoomControls({ sceneRef }: { sceneRef: React.RefObject<OfficeScene | null> }) {
+  const [zoom, setZoom] = useState(100)
+
+  useEffect(() => {
+    const id = setInterval(() => {
+      const z = sceneRef.current?.getZoom()
+      if (z != null) setZoom(Math.round(z * 100))
+    }, 200)
+    return () => clearInterval(id)
+  }, [sceneRef])
+
+  return (
+    <div style={{
+      position: 'absolute', bottom: 16, right: 16,
+      display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4,
+      fontFamily: 'monospace', userSelect: 'none',
+    }}>
+      <button onClick={() => sceneRef.current?.zoomIn()} style={zoomBtnStyle} title="Zoom in (+)">＋</button>
+      <span style={{
+        fontSize: '10px', color: '#aaa', background: 'rgba(13,13,26,0.7)',
+        borderRadius: 6, padding: '2px 6px', minWidth: 38, textAlign: 'center',
+      }}>{zoom}%</span>
+      <button onClick={() => sceneRef.current?.zoomOut()} style={zoomBtnStyle} title="Zoom out (-)">−</button>
+      <button onClick={() => sceneRef.current?.resetZoom()} style={{ ...zoomBtnStyle, fontSize: '10px', marginTop: 2 }} title="Reset zoom (0)">⟳</button>
+    </div>
+  )
+}
+
+const zoomBtnStyle: React.CSSProperties = {
+  width: 32, height: 32, borderRadius: 8,
+  background: 'rgba(13,13,26,0.75)',
+  backdropFilter: 'blur(8px)',
+  WebkitBackdropFilter: 'blur(8px)',
+  border: '1px solid rgba(51,197,102,0.25)',
+  color: '#ccc', fontSize: '16px', fontWeight: 'bold',
+  cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
+  transition: 'background 0.15s, border-color 0.15s',
+}
+
 // ── Main Component ──
 
 export default function OfficeGame() {
@@ -132,6 +173,16 @@ export default function OfficeGame() {
         <div style={{ fontSize: '9px', color: '#25B2E2', letterSpacing: 2 }}>virtual office</div>
       </div>
       {Object.keys(officeState).length > 0 && <HudDock state={officeState} />}
+      <ZoomControls sceneRef={sceneRef} />
+      <div style={{
+        position: 'absolute', bottom: 60, right: 16,
+        fontFamily: 'monospace', fontSize: '8px', color: '#555',
+        textAlign: 'right', lineHeight: 1.6, pointerEvents: 'none',
+      }}>
+        scroll: zoom · drag: pan<br />
+        +/−: zoom · 0: reset<br />
+        arrows: pan
+      </div>
     </div>
   )
 }

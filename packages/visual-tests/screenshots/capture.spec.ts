@@ -39,11 +39,10 @@ async function capture(page: Page, name: string) {
 
 // ── Reset server state before each scenario ──
 async function resetState() {
-  const state = await fetch(`${SERVER_URL}/state`).then(r => r.json())
-  const devs = Object.keys(state)
-  for (const dev of devs) {
-    await postEvent({ dev, type: 'session_end', ts: Date.now() })
-  }
+  const res = await fetch(`${SERVER_URL}/reset`, { method: 'POST' })
+  if (!res.ok) throw new Error(`POST /reset failed: ${res.status}`)
+  // Give the server a moment to broadcast the empty state
+  await new Promise(r => setTimeout(r, 300))
 }
 
 test('capture: empty office (floor only)', async ({ page }) => {

@@ -69,29 +69,34 @@ export class AgentBot {
     agentName: string,
   ) {
     const config = getMascotConfig(agentName)
-    const pos = toScreen(tx, ty, FLOOR_H)
+    // Place bot floating beside the desk — offset diagonally to avoid overlap
+    // with other desks and avatars. Use a small random jitter for variety.
+    const jitterX = (Math.random() - 0.5) * 0.6
+    const jitterY = (Math.random() - 0.5) * 0.4
+    const pos = toScreen(tx + 1.2 + jitterX, ty - 1.0 + jitterY, FLOOR_H + 1.5)
     const x = ox + pos.x
-    const y = oy + pos.y - 36
+    const y = oy + pos.y
 
-    // Glow halo
-    const glow = scene.add.circle(0, 0, 22, config.color, 0.18)
+    // Glow halo (smaller)
+    const glow = scene.add.circle(0, 2, 18, config.color, 0.15)
     glow.setBlendMode(Phaser.BlendModes.ADD)
 
-    // Robot body
+    // Robot body (slightly smaller)
     const g = scene.add.graphics()
+    g.setScale(0.85)
     drawRobot(g, config)
 
     // Label
-    const label = scene.add.text(0, 22, config.label, {
+    const label = scene.add.text(0, 20, config.label, {
       fontSize: '7px',
       color: '#ffffff',
       fontFamily: 'monospace',
-      backgroundColor: '#00000066',
+      backgroundColor: '#00000088',
       padding: { x: 3, y: 1 },
     }).setOrigin(0.5, 0)
 
     this.container = scene.add.container(x, y, [glow, g, label])
-    this.container.setDepth(y + 100) // render above avatar at same tile
+    this.container.setDepth(y + 50) // render above furniture at same Y
 
     // Bounce animation
     this.bounceTween = scene.tweens.add({

@@ -23,5 +23,12 @@ export class BroadcastServer {
     })
   }
 
+  /** Send a raw pre-serialised message to all connected clients */
+  broadcastRaw(msg: string) {
+    this.wss.clients.forEach(client => {
+      if (client.readyState === WebSocket.OPEN) client.send(msg)
+    })
+  }
+
   close() { this.wss.close() }
 }
