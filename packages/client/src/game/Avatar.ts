@@ -288,6 +288,7 @@ export class Avatar {
   private celebOriginY = -80
   private statusDot!: Phaser.GameObjects.Arc
   private activityLabel!: Phaser.GameObjects.Text
+  private thinkingTween?: Phaser.Tweens.Tween
   private deskX: number
   private deskY: number
   private ox: number
@@ -339,7 +340,8 @@ export class Avatar {
     const nameText = scene.add.text(0, -38, state.name, {
       fontSize: '11px', color: '#ffffff', fontFamily: 'monospace', fontStyle: 'bold',
     }).setOrigin(0.5, 0.5)
-    const pill = scene.add.rectangle(0, -38, nameText.width + 18, 19, CROMBIE_DARK, 0.92)
+    // Pill wide enough to contain the status dot (dot center at nameText.width/2+12, radius 3.5)
+    const pill = scene.add.rectangle(0, -38, nameText.width + 30, 19, CROMBIE_DARK, 0.92)
     pill.setStrokeStyle(1.5, color, 0.85)
     this.statusDot = scene.add.circle(nameText.width / 2 + 12, -38, 3.5,
       state.online ? CROMBIE_GREEN : 0x666666)
@@ -406,12 +408,31 @@ export class Avatar {
       this.activityLabel.setText('💻 working')
     }
 
+    // ── Thinking pulse: yellow + blink on activity label ──
+    if (state.thinking) {
+      this.activityLabel.setColor('#fecc33')
+      if (!this.thinkingTween) {
+        this.thinkingTween = this.scene.tweens.add({
+          targets: this.activityLabel,
+          alpha: { from: 1, to: 0.3 },
+          yoyo: true, repeat: -1, duration: 500,
+        })
+      }
+    } else {
+      this.activityLabel.setColor('#25B2E2')
+      this.thinkingTween?.stop()
+      this.thinkingTween = undefined
+      this.activityLabel.setAlpha(0.9)
+    }
+
     // ── Celebration ──
     if (state.celebrating) {
       this.scene.tweens.killTweensOf(this.celebContainer)
       this.celebContainer.setVisible(true)
       this.celebContainer.setAlpha(1)
       this.celebContainer.y = this.celebOriginY
+      // Brief green flash on the camera (Crombie green, low intensity)
+      this.scene.cameras.main.flash(350, 20, 80, 40)
       this.scene.tweens.add({
         targets: this.celebContainer,
         y: this.celebOriginY - 60,
@@ -749,6 +770,7 @@ export class Avatar {
 
   destroy() {
     this.cancelBehavior()
+    this.thinkingTween?.stop()
     this.container.destroy()
   }
 }

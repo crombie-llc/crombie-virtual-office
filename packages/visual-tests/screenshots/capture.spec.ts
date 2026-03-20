@@ -26,8 +26,16 @@ async function postEvent(payload: object) {
 }
 
 async function waitForOffice(page: Page) {
+  // First signal (may be from React StrictMode's first mount — will be reset by second mount)
   await page.waitForFunction(() => (window as any).__officeReady === true, { timeout: 15_000 })
-  // Extra frame for tweens to settle
+  // Wait to let StrictMode's cleanup+remount cycle complete (game destroyed and recreated)
+  await page.waitForTimeout(300)
+  // If StrictMode reset the flag, wait for the second (final) mount to finish
+  const stillReady = await page.evaluate(() => (window as any).__officeReady === true)
+  if (!stillReady) {
+    await page.waitForFunction(() => (window as any).__officeReady === true, { timeout: 15_000 })
+  }
+  // Extra frame for tweens and texture uploads to settle
   await page.waitForTimeout(500)
 }
 
@@ -123,6 +131,19 @@ test('capture: all mascot types', async ({ page }) => {
   await waitForOffice(page)
   await page.waitForTimeout(300)
   await capture(page, '07-all-mascots')
+})
+
+test('capture: desk area zoomed in', async ({ page }) => {
+  await resetState()
+  await page.goto('/')
+  await waitForOffice(page)
+  // Zoom in with keyboard '+' 5 times to see desk detail
+  for (let i = 0; i < 5; i++) {
+    await page.keyboard.press('Equal')
+    await page.waitForTimeout(80)
+  }
+  await page.waitForTimeout(600)
+  await capture(page, '09-desk-zoom')
 })
 
 test('capture: celebration burst', async ({ page }) => {

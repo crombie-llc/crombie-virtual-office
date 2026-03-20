@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
-import type { OfficeState, WsMessage } from '../types'
+import type { OfficeState } from '../types'
+import { WsMessageSchema } from '../types'
 
 export function useWebSocket(url: string) {
   const [state, setState] = useState<OfficeState>({})
@@ -13,21 +14,23 @@ export function useWebSocket(url: string) {
     ws.onerror = (e) => console.error('[useWebSocket] error:', e)
 
     ws.onmessage = (e) => {
-      try {
-        const msg: WsMessage = JSON.parse(e.data)
-        if ('type' in msg && msg.type === 'full_state') {
-          setState(msg.state)
-        } else if (Array.isArray(msg)) {
-          setState(prev => {
-            const next = { ...prev }
-            for (const { dev, patch } of msg) {
-              // Only apply patches for devs already in state (server only patches known devs)
-              if (next[dev]) next[dev] = { ...next[dev], ...patch }
-            }
-            return next
-          })
-        }
-      } catch {}
+      const result = WsMessageSchema.safeParse(JSON.parse(e.data))
+      if (!result.success) {
+        console.warn('[useWebSocket] invalid message', result.error.issues)
+        return
+      }
+      const msg = result.data
+      if ('type' in msg && msg.type === 'full_state') {
+        setState(msg.state)
+      } else if (Array.isArray(msg)) {
+        setState(prev => {
+          const next = { ...prev }
+          for (const { dev, patch } of msg) {
+            if (next[dev]) next[dev] = { ...next[dev], ...patch }
+          }
+          return next
+        })
+      }
     }
 
     return () => ws.close()

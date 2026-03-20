@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
 import Phaser from 'phaser'
 import { OfficeScene } from './OfficeScene'
-import type { OfficeState, DeveloperState, WsMessage } from '../types'
+import type { OfficeState, DeveloperState } from '../types'
+import { WsMessageSchema } from '../types'
 
 const WS_URL = (import.meta as { env?: { VITE_WS_URL?: string } }).env?.VITE_WS_URL ?? 'ws://localhost:4242'
 
@@ -9,8 +10,9 @@ const WS_URL = (import.meta as { env?: { VITE_WS_URL?: string } }).env?.VITE_WS_
 
 function DevChip({ dev }: { dev: DeveloperState }) {
   const statusEmoji = !dev.online ? '⚫'
+    : dev.celebrating ? '🎉'
     : dev.thinking ? '🤔'
-    : dev.activeAgent ? '💻'
+    : dev.activeAgent ? '🤖'
     : '✅'
   const agentShort = dev.activeAgent?.replace(/^crombie[:-]/, '') ?? null
 
@@ -37,7 +39,8 @@ function HudDock({ state }: { state: OfficeState }) {
       WebkitBackdropFilter: 'blur(8px)',
       border: '1px solid rgba(51,197,102,0.2)',
       borderRadius: 24, padding: '8px 20px',
-      display: 'flex', gap: 16, alignItems: 'center',
+      display: 'flex', flexWrap: 'wrap', gap: 16, alignItems: 'center',
+      maxWidth: '90vw', justifyContent: 'center',
       fontFamily: 'monospace', fontSize: '11px', color: '#aaa',
       pointerEvents: 'none',
     }}>
@@ -124,23 +127,24 @@ export default function OfficeGame() {
       }
 
       ws.onmessage = (event) => {
-        try {
-          const msg: WsMessage = JSON.parse(event.data)
-          if ('type' in msg && msg.type === 'full_state') {
-            setOfficeState(msg.state)
-            sceneRef.current?.updateState(msg.state)
-          } else if (Array.isArray(msg)) {
-            setOfficeState(prev => {
-              const next = { ...prev }
-              for (const { dev, patch } of msg) {
-                if (next[dev]) next[dev] = { ...next[dev], ...patch }
-              }
-              sceneRef.current?.updateState(next)
-              return next
-            })
-          }
-        } catch (e) {
-          console.error('[OfficeGame] WS parse error', e)
+        const result = WsMessageSchema.safeParse(JSON.parse(event.data))
+        if (!result.success) {
+          console.warn('[OfficeGame] invalid WS message', result.error.issues)
+          return
+        }
+        const msg = result.data
+        if ('type' in msg && msg.type === 'full_state') {
+          setOfficeState(msg.state)
+          sceneRef.current?.updateState(msg.state)
+        } else if (Array.isArray(msg)) {
+          setOfficeState(prev => {
+            const next = { ...prev }
+            for (const { dev, patch } of msg) {
+              if (next[dev]) next[dev] = { ...next[dev], ...patch }
+            }
+            sceneRef.current?.updateState(next)
+            return next
+          })
         }
       }
 
@@ -175,7 +179,7 @@ export default function OfficeGame() {
       {Object.keys(officeState).length > 0 && <HudDock state={officeState} />}
       <ZoomControls sceneRef={sceneRef} />
       <div style={{
-        position: 'absolute', bottom: 60, right: 16,
+        position: 'absolute', bottom: 140, right: 16,
         fontFamily: 'monospace', fontSize: '8px', color: '#555',
         textAlign: 'right', lineHeight: 1.6, pointerEvents: 'none',
       }}>

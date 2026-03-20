@@ -12,11 +12,13 @@
 import { toScreen } from './IsoCube'
 
 // ── Grid resolution ──
-const CELL_SIZE = 0.5          // each cell = 0.5 × 0.5 tiles
+// 0.25 tiles per cell (96×64 = 6144 cells) — fine enough that desk edges
+// and chair positions land in different cells, preventing ghost-walking.
+const CELL_SIZE = 0.25
 const TOTAL_W = 24
 const TOTAL_H = 16
-const GRID_W = Math.ceil(TOTAL_W / CELL_SIZE)   // 48
-const GRID_H = Math.ceil(TOTAL_H / CELL_SIZE)   // 32
+const GRID_W = Math.ceil(TOTAL_W / CELL_SIZE)   // 96
+const GRID_H = Math.ceil(TOTAL_H / CELL_SIZE)   // 64
 
 const FLOOR_H = 0.12
 
@@ -102,10 +104,11 @@ function buildGrid() {
   // Doorway at x=[19-21] is left open
 
   // ── Long desks (work area) ──
-  // Each desk spans x=1.5 to x=9.5, depth ~1.2 tiles
+  // Desk visual depth is ±0.6 tiles. Use ±0.7 as collision margin so that
+  // chair positions at tableY+0.8 stay in a different (walkable) cell.
   const deskRows = [2.5, 6, 9.5, 13]
   for (const ty of deskRows) {
-    blockRect(1.5, ty - 0.8, 9.5, ty + 0.8)
+    blockRect(1.5, ty - 0.7, 9.5, ty + 0.7)
   }
 
   // ── Kitchen counter (along top wall) ──
@@ -210,7 +213,7 @@ function astarGrid(
   gScores.set(key(startCx, startCy), 0)
 
   let iterations = 0
-  const MAX_ITERATIONS = 3000  // safety limit
+  const MAX_ITERATIONS = 6000  // fine grid (96×64) needs more headroom
 
   while (open.length > 0 && iterations < MAX_ITERATIONS) {
     iterations++

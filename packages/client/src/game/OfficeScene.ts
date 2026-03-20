@@ -48,16 +48,16 @@ const DESK_ACCENT = { top: C_GREEN, left: 0x267a40, right: 0x2a8a48 }
 const DESK_LEG = { top: 0x555555, left: 0x444444, right: 0x4a4a4a }
 
 // ── Desk positions: seats along long shared tables ──
-// Each row has 2 seats with wider spacing (4 tiles apart) to avoid overlap
-// Row A: long table at ty=2.5, seats at tx=3.5, 7.5
-// Row B: long table at ty=6,   seats at tx=3.5, 7.5
-// Row C: long table at ty=9.5, seats at tx=3.5, 7.5
-// Row D: long table at ty=13,  seats at tx=3.5, 7.5
+// Each row has 3 seats evenly spaced along the desk (x=1.5 to x=9.5)
+// Row A: long table at ty=2.5, seats at tx=3.0, 5.5, 8.0
+// Row B: long table at ty=6,   seats at tx=3.0, 5.5, 8.0
+// Row C: long table at ty=9.5, seats at tx=3.0, 5.5, 8.0
+// Row D: long table at ty=13,  seats at tx=3.0, 5.5, 8.0
 const DESK_ROWS = [
-  { tableY: 2.5,  seats: [3.5, 7.5] },
-  { tableY: 6,    seats: [3.5, 7.5] },
-  { tableY: 9.5,  seats: [3.5, 7.5] },
-  { tableY: 13,   seats: [3.5, 7.5] },
+  { tableY: 2,  seats: [3.0, 5.5, 8.0] },
+  { tableY: 6,    seats: [3.0, 5.5, 8.0] },
+  { tableY: 9.5,  seats: [3.0, 5.5, 8.0] },
+  { tableY: 14,   seats: [3.0, 5.5, 8.0] },
 ]
 
 // Flatten to individual desk positions for avatar placement.
@@ -86,29 +86,26 @@ const STATIC_FURNITURE: FurnitureDef[] = [
   { key: 'tableCross_SE',     tx: 13,   ty: 6.5,  scale: 0.45 },
 
   // ── Lounge (right-bottom: x=16-24, y=8-16) ──
-  { key: 'loungeSofa_SE',             tx: 18,   ty: 10.5, scale: 0.42 },
-  { key: 'loungeDesignSofa_SW',       tx: 22,   ty: 10.5, scale: 0.42 },
-  { key: 'loungeChair_SE',            tx: 18,   ty: 12.5, scale: 0.42 },
-  { key: 'tableCoffeeGlassSquare_SE', tx: 20,   ty: 11,   scale: 0.45 },
-  { key: 'lampRoundFloor_SE',         tx: 23.2, ty: 14.5, scale: 0.5 },
+  { key: 'loungeSofa_SE',             tx: 18,   ty: 10.5, scale: 0.5 },
+  { key: 'loungeDesignSofa_SW',       tx: 23,   ty: 10.5, scale: 0.5 },
+  { key: 'loungeChair_SE',            tx: 17.9,   ty: 13.7, scale: 0.5 },
+  { key: 'tableCoffeeGlassSquare_SE', tx: 21,   ty: 11,   scale: 0.6 },
+  { key: 'lampRoundFloor_SE',         tx: 23.2, ty: 14.5, scale: 0.7 },
 
   // ── Kitchen (right-top: x=16-24, y=0-8) ──
-  { key: 'sideTableDrawers_SE', tx: 17,   ty: 0.5, scale: 0.45 },
-  { key: 'sideTable_SE',        tx: 19,   ty: 0.5, scale: 0.45 },
-  { key: 'sideTableDrawers_SE', tx: 21,   ty: 0.5, scale: 0.45 },
-  { key: 'tableRound_SE',       tx: 19.5, ty: 5.5, scale: 0.45 },
-  { key: 'lampSquareFloor_SE',  tx: 22.5, ty: 7.5, scale: 0.5 },
+  { key: 'tableRound_SE',       tx: 19.5, ty: 5.5, scale: 0.75 },
+  { key: 'lampSquareFloor_SE',  tx: 23.5, ty: 6.5, scale: 0.5 },
 
   // ── Decorative plants (well-placed, not behind walls) ──
-  { key: 'pottedPlant_SE',  tx: 1,    ty: 0.5,  scale: 0.8 },   // top-left corner
+  { key: 'pottedPlant_SE',  tx: 0.7,    ty: 0.5,  scale: 0.9 },   // top-left corner
   { key: 'pottedPlant_SE',  tx: 9.2,  ty: 0.5,  scale: 0.75 },  // near divider
-  { key: 'pottedPlant_SE',  tx: 1,    ty: 11.5, scale: 0.8 },   // left wall lower
-  { key: 'plantSmall2_SE',  tx: 23,   ty: 0.5,  scale: 0.9 },   // kitchen corner
-  { key: 'plantSmall3_SE',  tx: 23,   ty: 8.5,  scale: 0.9 },   // lounge corner
+  { key: 'pottedPlant_SE',  tx: 0.7,    ty: 11.5, scale: 0.9 },   // left wall lower
+  { key: 'plantSmall2_SE',  tx: 23,   ty: 0.5,  scale: 1.1 },   // kitchen corner
+  { key: 'plantSmall3_SE',  tx: 23,   ty: 8.5,  scale: 1.1 },   // lounge corner
   { key: 'plantSmall1_SE',  tx: 15.5, ty: 0.5,  scale: 0.8 },   // between meeting & kitchen
   { key: 'plantSmall1_SE',  tx: 9.2,  ty: 11,   scale: 0.75 },  // corridor near divider
-  { key: 'pottedPlant_SE',  tx: 15.5, ty: 15,   scale: 0.7 },   // lounge entrance
-  { key: 'plantSmall2_SE',  tx: 1,    ty: 15,   scale: 0.75 },  // bottom-left corner
+  { key: 'pottedPlant_SE',  tx: 17.5, ty: 15,   scale: 0.7 },   // lounge entrance
+  { key: 'plantSmall2_SE',  tx: 0.7,    ty: 15.5,   scale: 1.5 },  // bottom-left corner
 
   // ── Bookshelves along NW wall (work area) ──
   { key: 'bookcaseOpen_SE',       tx: 0.5, ty: 4.5,  scale: 0.45 },
@@ -141,7 +138,7 @@ export class OfficeScene extends Phaser.Scene {
     const keys = new Set<string>()
     STATIC_FURNITURE.forEach(f => keys.add(f.key))
     // We still load desk/chair assets for meeting room chairs
-    keys.add('desk_SE'); keys.add('computerScreen_SE')
+    keys.add('desk_SE'); keys.add('computerScreen_SE'); keys.add('computerScreen_SW'); keys.add('computerKeyboard_SE')
     keys.add('chairDesk_SE'); keys.add('chairDesk_SW')
     for (const key of keys) {
       this.load.image(key, `${fb}${key}.png`)
@@ -150,6 +147,9 @@ export class OfficeScene extends Phaser.Scene {
   }
 
   create() {
+    // Reset ready flag so React StrictMode's double-mount doesn't trigger
+    // Playwright screenshots before the final scene is fully built
+    ;(window as Window & { __officeReady?: boolean }).__officeReady = false
     this.events.on(Phaser.Scenes.Events.SHUTDOWN, this.shutdown, this)
 
     // Center the office in the viewport
@@ -458,9 +458,9 @@ export class OfficeScene extends Phaser.Scene {
     g.strokePoints(wbCorners.map(c => ({ x: ox + c.x, y: oy + c.y })), true)
 
     // TV screen on NE wall (above kitchen zone) — shifted left so it's not cut off
-    drawCube(g, ox, oy, 18, -WALL_THICK + 0.01, artZ, 2.5, 0.05, 1.1,
+    drawCube(g, ox, oy, 11, -WALL_THICK + 0.03, artZ, 2.5, 0.05, 1.1,
       0x222233, 0x1a1a2e, 0x1e1e30)
-    drawCube(g, ox, oy, 18.15, -WALL_THICK + 0.02, artZ + 0.1, 2.2, 0.03, 0.9,
+    drawCube(g, ox, oy, 11.15, -WALL_THICK + 0.04, artZ + 0.1, 2.2, 0.03, 0.9,
       0x3366aa, 0x2255aa, 0x2860aa)
 
     // Windows on NW wall
@@ -475,17 +475,17 @@ export class OfficeScene extends Phaser.Scene {
     this.add.circle(ox + cp.x, oy + cp.y, 1.5, 0x333344).setDepth(1)
 
     // Room name signs
-    const meetSign = toScreen(13, -WALL_THICK + 0.03, FLOOR_H + WALL_H * 0.75)
+    const meetSign = toScreen(13, -WALL_THICK + 0.03, FLOOR_H + WALL_H * 0.8)
     this.add.text(ox + meetSign.x, oy + meetSign.y, '📋 SALA 1', {
       fontSize: '7px', color: '#ccc', fontFamily: 'monospace',
     }).setOrigin(0.5).setDepth(1)
 
-    const workSign = toScreen(5, -WALL_THICK + 0.03, FLOOR_H + WALL_H * 0.75)
+    const workSign = toScreen(5, -WALL_THICK + 0.03, FLOOR_H + WALL_H * 0.8)
     this.add.text(ox + workSign.x, oy + workSign.y, '💻 DEV FLOOR', {
       fontSize: '7px', color: '#33c566', fontFamily: 'monospace',
     }).setOrigin(0.5).setDepth(1)
 
-    const kitchenSign = toScreen(19, -WALL_THICK + 0.03, FLOOR_H + WALL_H * 0.75)
+    const kitchenSign = toScreen(19, -WALL_THICK + 0.03, FLOOR_H + WALL_H * 0.8)
     this.add.text(ox + kitchenSign.x, oy + kitchenSign.y, '🍳 KITCHEN', {
       fontSize: '7px', color: '#fecc33', fontFamily: 'monospace',
     }).setOrigin(0.5).setDepth(1)
@@ -527,24 +527,25 @@ export class OfficeScene extends Phaser.Scene {
         tableW, 0.08, 0.03,
         DESK_ACCENT.top, DESK_ACCENT.left, DESK_ACCENT.right)
 
-      // Monitors at each seat position — BIGGER and more visible
-      for (const seatX of row.seats) {
-        // Monitor stand
-        drawCube(g, ox, oy, seatX - 0.1, ty - 0.2, FLOOR_H + tableH + 0.06,
-          0.2, 0.1, 0.25,
-          0x444444, 0x333333, 0x3a3a3a)
-        // Monitor screen — wider and taller
-        drawCube(g, ox, oy, seatX - 0.55, ty - 0.35, FLOOR_H + tableH + 0.31,
-          1.1, 0.07, 0.65,
-          0x222233, 0x1a1a2e, 0x1e1e30)
-        // Screen glow (Crombie cyan) — brighter
-        drawCube(g, ox, oy, seatX - 0.48, ty - 0.34, FLOOR_H + tableH + 0.36,
-          0.96, 0.04, 0.55,
-          C_CYAN, 0x1a8ab0, 0x2090b8, 0.8)
-      }
-
       const depthPos = toScreen(tableStartX + tableW / 2, ty)
       g.setDepth(oy + depthPos.y + 5)
+
+      // Monitors + keyboards as sprites.
+      // Depth must be explicitly above the desk (depthPos.y + 5) — using the
+      // monitor's own tile Y would give a lower value and render it behind the desk.
+      // SW variant shows the screen face toward the viewer (SE camera looks NW→SE,
+      // so a SW-facing monitor screen is visible from the front).
+      for (const seatX of row.seats) {
+        const screenPos = toScreen(seatX, ty - 0.5, FLOOR_H + tableH + 0.05)
+        const keyPos    = toScreen(seatX, ty + 0.1,  FLOOR_H + tableH)
+        const monDepth  = oy + depthPos.y + 30   // same reference as desk (+5), explicitly above
+
+        const monitor = this.add.image(ox + screenPos.x, oy + screenPos.y, 'computerScreen_SW')
+        monitor.setOrigin(0.5, 1).setScale(0.75).setDepth(monDepth)
+
+        const keyboard = this.add.image(ox + keyPos.x, oy + keyPos.y, 'computerKeyboard_SE')
+        keyboard.setOrigin(0.5, 1).setScale(0.6).setFlipX(true).setDepth(monDepth - 2)
+      }
     }
   }
 
@@ -556,15 +557,15 @@ export class OfficeScene extends Phaser.Scene {
     // SE-facing chairs on the left/top side, SW-facing on the right/bottom
     const meetingChairs: Array<{ tx: number; ty: number; key: string; flipX?: boolean }> = [
       // Table 1 (tx=13, ty=3)
-      { tx: 11.6, ty: 2.4, key: 'chairDesk_SE' },
-      { tx: 11.6, ty: 3.6, key: 'chairDesk_SE' },
-      { tx: 14.4, ty: 2.4, key: 'chairDesk_SW' },
-      { tx: 14.4, ty: 3.6, key: 'chairDesk_SW' },
+      { tx: 11.4, ty: 1.4, key: 'chairDesk_SE' },
+      { tx: 11.4, ty: 2.6, key: 'chairDesk_SE' },
+      { tx: 13.8, ty: 1.1, key: 'chairDesk_SW' },
+      { tx: 13.8, ty: 2.2, key: 'chairDesk_SW' },
       // Table 2 (tx=13, ty=6.5)
-      { tx: 11.6, ty: 5.9, key: 'chairDesk_SE' },
-      { tx: 11.6, ty: 7.1, key: 'chairDesk_SE' },
-      { tx: 14.4, ty: 5.9, key: 'chairDesk_SW' },
-      { tx: 14.4, ty: 7.1, key: 'chairDesk_SW' },
+      { tx: 11.6, ty: 4.9, key: 'chairDesk_SE' },
+      { tx: 11.6, ty: 6.1, key: 'chairDesk_SE' },
+      { tx: 13.4, ty: 4.9, key: 'chairDesk_SW' },
+      { tx: 13.4, ty: 6.1, key: 'chairDesk_SW' },
     ]
 
     for (const chair of meetingChairs) {
@@ -591,7 +592,7 @@ export class OfficeScene extends Phaser.Scene {
     for (const chair of kitchenChairs) {
       const pos = toScreen(chair.tx, chair.ty, FLOOR_H)
       const sprite = this.add.image(ox + pos.x, oy + pos.y, chair.key)
-      sprite.setScale(0.32)
+      sprite.setScale(0.62)
       sprite.setOrigin(0.5, 0.85)
       sprite.setDepth(oy + toScreen(chair.tx, chair.ty).y)
       // Tint with Crombie yellow for brand consistency
@@ -681,9 +682,9 @@ export class OfficeScene extends Phaser.Scene {
     for (const l of labels) {
       const p = toScreen(l.tx, l.ty, FLOOR_H)
       this.add.text(ox + p.x, oy + p.y, l.text, {
-        fontSize: '8px', color: l.color ?? '#999', fontFamily: 'monospace',
+        fontSize: '9px', color: l.color ?? '#999', fontFamily: 'monospace',
         fontStyle: 'bold',
-      }).setOrigin(0.5).setAlpha(0.35).setDepth(2)
+      }).setOrigin(0.5).setAlpha(0.55).setDepth(2)
     }
   }
 
@@ -693,13 +694,13 @@ export class OfficeScene extends Phaser.Scene {
     g.setDepth(1)
     // Crombie brand colors as abstract bars on NW wall — BIGGER and more visible
     const bars = [
-      { color: C_PINK,   ty: 8.0,  width: 3.0 },
-      { color: C_CYAN,   ty: 8.6,  width: 2.5 },
-      { color: C_PURPLE, ty: 9.2,  width: 1.2 },
-      { color: C_YELLOW, ty: 9.8,  width: 2.8 },
-      { color: C_GREEN,  ty: 10.4, width: 2.0 },
-      { color: C_PINK,   ty: 11.0, width: 0.8 },
-      { color: C_CYAN,   ty: 11.6, width: 1.5 },
+      { color: C_PINK,   ty: 5, tx: 2, width: 3.0 },
+      { color: C_CYAN,   ty: 6, tx: 3, width: 3.0 },
+      { color: C_PURPLE, ty: 7, tx: 4, width: 3.0 },
+      { color: C_YELLOW, ty: 8, tx: 5, width: 3.0 },
+      { color: C_GREEN,  ty: 9, tx: 6,width: 3.0 },
+      { color: C_PINK,   ty: 10, tx: 7,width: 3.0 },
+      { color: C_CYAN,   ty: 11, tx: 8,width: 3.0 },
     ]
     for (const bar of bars) {
       drawCube(g, ox, oy, -WALL_THICK + 0.01, bar.ty, FLOOR_H + WALL_H * 0.3,
@@ -708,10 +709,11 @@ export class OfficeScene extends Phaser.Scene {
     }
 
     // "CROMBIE" text on the wall
-    const textPos = toScreen(-WALL_THICK + 0.04, 9.8, FLOOR_H + WALL_H * 0.72)
-    this.add.text(ox + textPos.x, oy + textPos.y, 'C R O M B I E', {
-      fontSize: '6px', color: '#33c566', fontFamily: 'monospace', fontStyle: 'bold',
-    }).setOrigin(0.5).setAlpha(0.6).setDepth(1).setAngle(-25)
+    const textPos = toScreen(-WALL_THICK , 5, FLOOR_H + WALL_H * 0.80)
+    const textDepth = oy + toScreen(-WALL_THICK + 0.04, 9.8).y + 5
+    this.add.text(ox + textPos.x, oy + textPos.y, 'Empathy-Driven Software Partner - Crombie', {
+      fontSize: '13px', color: '#33c566', fontFamily: 'monospace', fontStyle: 'bold',
+    }).setOrigin(0.5).setAlpha(0.9).setDepth(textDepth).setAngle(-26.5)
   }
 
   // ── State management ──
@@ -733,8 +735,8 @@ export class OfficeScene extends Phaser.Scene {
       }
       const idx = this.devIndex.get(devName)!
       const desk = DESK_POSITIONS[idx % DESK_POSITIONS.length]
-      const pos = toScreen(desk.tx, desk.ty, FLOOR_H)
-      const screenX = ox + pos.x
+      const pos = toScreen(desk.tx , desk.ty, FLOOR_H)
+      const screenX = ox + pos.x 
       const screenY = oy + pos.y
 
       if (!this.avatars.has(devName)) {

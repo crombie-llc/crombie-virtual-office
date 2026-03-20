@@ -88,21 +88,27 @@ export class AgentBot {
     // with other desks and avatars. Use a small random jitter for variety.
     const jitterX = (Math.random() - 0.5) * 0.6
     const jitterY = (Math.random() - 0.5) * 0.4
-    const pos = toScreen(tx + 1.2 + jitterX, ty - 1.0 + jitterY, FLOOR_H + 1.5)
+    const btx = tx + 1.2 + jitterX
+    const bty = ty - 1.0 + jitterY
+    // Elevated screen position (for visual placement)
+    const pos = toScreen(btx, bty, FLOOR_H + 1.5)
     const x = ox + pos.x
     const y = oy + pos.y
+    // Ground-level position (for depth sorting — elevation reduces screen Y,
+    // which would make the bot render behind desks if used directly)
+    const groundY = oy + toScreen(btx, bty, FLOOR_H).y
 
     // Glow halo
-    const glow = scene.add.circle(0, 0, 16, config.top, 0.18)
+    const glow = scene.add.circle(0, 0, 20, config.top, 0.35)
     glow.setBlendMode(Phaser.BlendModes.ADD)
 
     // Isometric cube body
     const g = scene.add.graphics()
     drawIsoCube(g, config.top, config.left, config.right)
 
-    // Label — small, below the cube
+    // Label — below the cube
     const label = scene.add.text(0, 14, config.label, {
-      fontSize: '7px',
+      fontSize: '9px',
       color: '#ffffff',
       fontFamily: 'monospace',
       backgroundColor: '#00000099',
@@ -110,7 +116,8 @@ export class AgentBot {
     }).setOrigin(0.5, 0)
 
     this.container = scene.add.container(x, y, [glow, g, label])
-    this.container.setDepth(y + 50) // render above furniture at same Y
+    // Depth based on ground tile position so the bot sorts correctly above desks
+    this.container.setDepth(groundY + 100)
 
     // Bounce animation
     this.bounceTween = scene.tweens.add({

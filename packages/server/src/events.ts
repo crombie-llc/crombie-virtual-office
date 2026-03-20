@@ -1,28 +1,23 @@
+import { z } from 'zod'
 import type { OfficeEvent } from './state.js'
 
-const VALID_TYPES = new Set([
-  'session_start', 'session_end', 'agent_start', 'agent_end', 'thinking', 'commit'
-])
+const EventSchema = z.object({
+  dev:   z.string().trim().min(1).max(50).transform(v => v.toLowerCase()),
+  type:  z.enum(['session_start', 'session_end', 'agent_start', 'agent_end', 'thinking', 'commit']),
+  ts:    z.number().optional().transform(v => v ?? Date.now()),
+  color: z.string().optional(),
+  agent: z.string().trim().min(1).optional(),
+})
 
 export function parseEvent(body: unknown): OfficeEvent | null {
-  if (typeof body !== 'object' || body === null) return null
-  const b = body as Record<string, unknown>
+  const result = EventSchema.safeParse(body)
+  if (!result.success) return null
 
-  if (typeof b.dev !== 'string' || !b.dev.trim()) return null
-  const dev = b.dev.trim().toLowerCase()
-  if (dev.length > 50) return null
-
-  if (typeof b.type !== 'string' || !VALID_TYPES.has(b.type)) return null
-  const type = b.type as OfficeEvent['type']
-
-  const ts = typeof b.ts === 'number' ? b.ts : Date.now()
-
+  const { dev, type, ts, color, agent } = result.data
   const event: OfficeEvent = { dev, type, ts }
 
-  if (typeof b.color === 'string') event.color = b.color
-  if (type === 'agent_start') {
-    event.agent = typeof b.agent === 'string' && b.agent.trim() ? b.agent.trim() : 'unknown'
-  }
+  if (color) event.color = color
+  if (type === 'agent_start') event.agent = agent ?? 'unknown'
 
   return event
 }
