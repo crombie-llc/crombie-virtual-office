@@ -4,6 +4,8 @@ Real-time retro-isometric virtual office. Ver en tiempo real quién está trabaj
 
 **Live**: [https://coe.crombie.dev](https://coe.crombie.dev)
 
+![Crombie Virtual Office](docs/screenshots/office-preview.png)
+
 ---
 
 ## Cómo funciona
