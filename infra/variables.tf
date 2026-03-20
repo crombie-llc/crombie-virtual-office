@@ -23,12 +23,3 @@ variable "bucket_name" {
   default     = "crombie-office-client"
 }
 
-variable "ssh_public_key" {
-  description = "SSH public key for EC2 access (paste contents of ~/.ssh/id_rsa.pub)"
-  type        = string
-}
-
-variable "my_ip" {
-  description = "Your public IP in CIDR notation (e.g. 1.2.3.4/32) — restricts SSH access to only your machine"
-  type        = string
-}

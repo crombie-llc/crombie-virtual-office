@@ -24,24 +24,10 @@ data "aws_route53_zone" "coe" {
   private_zone = false
 }
 
-# ── EC2 Key Pair ──────────────────────────────────────────────────────────────
-resource "aws_key_pair" "deploy" {
-  key_name   = "crombie-office-deploy"
-  public_key = var.ssh_public_key
-}
-
 # ── Security Group ────────────────────────────────────────────────────────────
 resource "aws_security_group" "office_server" {
   name        = "crombie-office-server"
-  description = "Allow HTTP, HTTPS and SSH to the virtual office server"
-
-  ingress {
-    description = "SSH - key-auth only, open for CI/CD (GitHub Actions uses dynamic IPs)"
-    from_port   = 22
-    to_port     = 22
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
+  description = "Allow HTTP and HTTPS to the virtual office server"
 
   ingress {
     description = "HTTP - redirected to HTTPS by Nginx"
@@ -92,7 +78,7 @@ data "aws_ami" "ubuntu" {
 resource "aws_instance" "office_server" {
   ami                    = data.aws_ami.ubuntu.id
   instance_type          = "t2.micro"
-  key_name               = aws_key_pair.deploy.key_name
+  iam_instance_profile   = aws_iam_instance_profile.ec2_ssm.name
   vpc_security_group_ids = [aws_security_group.office_server.id]
 
   subnet_id = aws_default_subnet.default_az1.id

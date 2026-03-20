@@ -1,6 +1,16 @@
 output "ec2_ip" {
-  description = "Public Elastic IP of the office server — set EC2_HOST GitHub secret to this value"
+  description = "Public Elastic IP of the office server"
   value       = aws_eip.office_server.public_ip
+}
+
+output "ec2_instance_id" {
+  description = "EC2 instance ID — set EC2_INSTANCE_ID GitHub secret to this value"
+  value       = aws_instance.office_server.id
+}
+
+output "github_actions_role_arn" {
+  description = "IAM role ARN for GitHub Actions OIDC — set AWS_ROLE_TO_ASSUME GitHub secret to this value"
+  value       = aws_iam_role.github_actions.arn
 }
 
 output "cloudfront_distribution_id" {

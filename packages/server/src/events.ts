@@ -5,8 +5,8 @@ const EventSchema = z.object({
   dev:   z.string().trim().min(1).max(50).transform(v => v.toLowerCase()),
   type:  z.enum(['session_start', 'session_end', 'agent_start', 'agent_end', 'thinking', 'commit']),
   ts:    z.number().optional().transform(v => v ?? Date.now()),
-  color: z.string().optional(),
-  agent: z.string().trim().min(1).optional(),
+  color: z.string().max(20).optional(),
+  agent: z.string().trim().min(1).max(100).optional(),
 })
 
 export function parseEvent(body: unknown): OfficeEvent | null {
