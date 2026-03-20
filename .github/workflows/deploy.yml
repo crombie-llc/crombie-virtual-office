@@ -30,7 +30,7 @@ jobs:
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
             cd /opt/crombie-office
-            git pull origin main
+            git pull origin master
             npm ci --workspace=packages/server
             npm run build --workspace=packages/server
             pm2 restart crombie-office

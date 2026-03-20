@@ -36,11 +36,11 @@ resource "aws_security_group" "office_server" {
   description = "Allow HTTP, HTTPS and SSH to the virtual office server"
 
   ingress {
-    description = "SSH - restricted to deployer IP only"
+    description = "SSH - key-auth only, open for CI/CD (GitHub Actions uses dynamic IPs)"
     from_port   = 22
     to_port     = 22
     protocol    = "tcp"
-    cidr_blocks = ["${var.my_ip}/32"]
+    cidr_blocks = ["0.0.0.0/0"]
   }
 
   ingress {
