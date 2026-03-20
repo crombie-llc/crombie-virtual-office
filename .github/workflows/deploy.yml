@@ -38,7 +38,7 @@ jobs:
           COMMAND_ID=$(aws ssm send-command \
             --instance-ids "${{ secrets.EC2_INSTANCE_ID }}" \
             --document-name "AWS-RunShellScript" \
-            --parameters 'commands=["cd /opt/crombie-office && git pull origin master && npm ci --workspace=packages/server && npm run build --workspace=packages/server && pm2 restart crombie-office"]' \
+            --parameters 'commands=["cd /opt/crombie-office && git pull origin master && npm ci --workspace=packages/server && npm run build --workspace=packages/server && sudo -u ubuntu bash -c \"export HOME=/home/ubuntu && /usr/bin/pm2 restart crombie-office\""]' \
             --query "Command.CommandId" \
             --output text)
 
